@@ -6,8 +6,19 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
+  # Use VM Memory size if set as Env variable, otherwise default to 2GB
+  if ENV['vm_mem']
+    $vm_mem = ENV['vm_mem']
+  else
+    puts "Environment variable: 'vm_mem' is not set, defaulting to '2048'"
+    $vm_mem = '2048'
+  end
+
   config.vm.box = "centos64-x86_64-20131030"
   config.vm.box_url = "https://github.com/2creatives/vagrant-centos/releases/download/v0.1.0/centos64-x86_64-20131030.box"
+  config.vm.provider "virtualbox" do |v|
+    v.customize ["modifyvm", :id, "--memory", "#{$vm_mem}"]
+  end
 
   config.ssh.forward_agent = true
   config.vm.network "private_network", ip: "192.168.200.201"
