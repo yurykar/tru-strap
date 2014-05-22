@@ -118,7 +118,7 @@ puppet apply -e "package { 'git': ensure => present }" > /dev/null
 # Clone private repo.
 puppet apply -e "file { '$FACTER_init_repodir': ensure => absent, force => true }" > /dev/null
 echo -n "Cloning $FACTER_init_repouser/$FACTER_init_reponame repo"
-progress_bar git clone -b $FACTER_init_repobranch git@github.com:$FACTER_init_repouser/$FACTER_init_reponame.git $FACTER_init_repodir
+git clone -b $FACTER_init_repobranch git@github.com:$FACTER_init_repouser/$FACTER_init_reponame.git $FACTER_init_repodir
 
 # Exit if the clone fails
 if [ ! -d "$FACTER_init_repodir" ]
