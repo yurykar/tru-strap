@@ -41,7 +41,7 @@ function set_facter {
   puppet apply -e "file { '/etc/facter': ensure => directory, mode => 0600 }" --logdest syslog > /dev/null
   puppet apply -e "file { '/etc/facter/facts.d': ensure => directory, mode => 0600 }" --logdest syslog > /dev/null
   puppet apply -e "file { '/etc/facter/facts.d/$1.txt': ensure => present, mode => 0600, content => '$1=$2' }" --logdest syslog > /dev/null
-  echo -n "Facter says $1 is..."
+  echo -n "Facter says $1 is:"
   echo -e "\e[0;32m $(facter $1) \e[0m"
 }
 
@@ -105,7 +105,7 @@ if [[ "$FACTER_init_role" == "" || "$FACTER_init_env" == "" || "$FACTER_init_rep
 fi
 
 # Set Git login params
-echo "Injecting private ssh key..."
+echo "Injecting private ssh key"
 GITHUB_PRI_KEY=$(cat $FACTER_init_repoprivkeyfile)
 puppet apply -v -e "file {'ssh': path => '/root/.ssh/',ensure => directory}" > /dev/null
 puppet apply -v -e "file {'id_rsa': path => '/root/.ssh/id_rsa',ensure => present, mode    => 0600, content => '$GITHUB_PRI_KEY'}" > /dev/null
@@ -144,5 +144,6 @@ progress_bar librarian-puppet update --verbose
 librarian-puppet show
 
 # Make things happen.
-echo -n "Running puppet apply"
-progress_bar puppet apply /etc/puppet/manifests/site.pp
+echo ""
+echo "Running puppet apply"
+puppet apply /etc/puppet/manifests/site.pp
