@@ -14,8 +14,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     $vm_mem = '2048'
   end
 
-  config.vm.box = "centos64-x86_64-20131030"
-  config.vm.box_url = "https://github.com/2creatives/vagrant-centos/releases/download/v0.1.0/centos64-x86_64-20131030.box"
+  config.vm.box = "centos65-x86_64-20140116"
+  config.vm.box_url = "https://github.com/2creatives/vagrant-centos/releases/download/v6.5.3/centos65-x86_64-20140116.box"
   config.vm.provider "virtualbox" do |v|
     v.customize ["modifyvm", :id, "--memory", "#{$vm_mem}"]
   end
