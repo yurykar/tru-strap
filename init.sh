@@ -130,8 +130,8 @@ rm -rf /etc/puppet ; ln -s $PUPPET_DIR /etc/puppet
 puppet apply -e "file { '/etc/hiera.yaml': ensure => link, target => '/etc/puppet/hiera.yaml' }" > /dev/null
 
 # # Install RVM to manage Ruby versions
-echo -n "Installing RVM and latest Ruby"
-progress_bar curl -sSL https://get.rvm.io | bash -s stable --ruby
+echo "Installing RVM and latest Ruby"
+curl -sSL https://get.rvm.io | bash -s stable --ruby
 source /usr/local/rvm/scripts/rvm
 
 # # Use RVM to select specific Ruby version (2.1+) for use with Librarian-puppet
