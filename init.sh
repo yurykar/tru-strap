@@ -152,7 +152,7 @@ progress_bar librarian-puppet update --verbose
 librarian-puppet show
 
 # # Use RVM to revert Ruby version to back to system default (1.8.7)
-rvm use system
+rvm --default use system
 
 # Make things happen.
 echo ""
