@@ -139,7 +139,7 @@ rvm use ruby
 
 # Install and execute Librarian Puppet
 # Create symlink to role specific Puppetfile
-rm -f /etc/puppet/Puppetfile ; ln -s /etc/puppet/Puppetfiles/Puppetfile.$FACTER_init_role /etc/puppet/Puppetfile > /dev/null
+rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/Puppetfile.base /etc/puppet/Puppetfiles/Puppetfile.$FACTER_init_role > /etc/puppet/Puppetfile
 echo -n "Installing librarian-puppet"
 progress_bar gem install librarian-puppet --no-ri --no-rdoc
 echo -n "Installing Puppet gem"
