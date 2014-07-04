@@ -132,7 +132,7 @@ puppet apply -e "file { '/etc/hiera.yaml': ensure => link, target => '/etc/puppe
 
 # Install and execute Librarian Puppet
 # Create symlink to role specific Puppetfile
-rm -f /etc/puppet/Puppetfile ; ln -s /etc/puppet/Puppetfiles/Puppetfile.$FACTER_init_role /etc/puppet/Puppetfile > /dev/null
+rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/Puppetfile.base /etc/puppet/Puppetfiles/Puppetfile.$FACTER_init_role > /etc/puppet/Puppetfile
 echo -n "Installing librarian-puppet"
 progress_bar gem install librarian-puppet -v 1.0.2 --no-ri --no-rdoc
 cd $PUPPET_DIR
@@ -141,6 +141,9 @@ progress_bar librarian-puppet install --verbose
 echo -n "Updating Puppet modules"
 progress_bar librarian-puppet update --verbose
 librarian-puppet show
+
+# # Use RVM to revert Ruby version to back to system default (1.8.7)
+rvm --default use system
 
 # Make things happen.
 echo ""
