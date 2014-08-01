@@ -38,7 +38,7 @@ function set_facter {
 }
 
 function retrieve_facter {
-  export FACTER_$1=`facter $2`
+  export FACTER_$1=`facter $1`
   echo -n "Facter says $1 is:"
   echo -e "\e[0;32m $(facter $1) \e[0m"
 }
