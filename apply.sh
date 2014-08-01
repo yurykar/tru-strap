@@ -83,6 +83,7 @@ if [[ "$FACTER_init_role" == "" || "$FACTER_init_env" == "" ]]; then
 fi
 
 retrieve_facter init_reponame
+retrieve_facter init_repodir
 
 # Link /etc/puppet to our private repo.
 PUPPET_DIR="$FACTER_init_repodir/puppet"
