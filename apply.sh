@@ -37,6 +37,12 @@ function set_facter {
   echo -e "\e[0;32m $(facter $1) \e[0m"
 }
 
+function retrieve_facter {
+  export FACTER_$1=facter $2
+  echo -n "Facter says $1 is:"
+  echo -e "\e[0;32m $(facter $1) \e[0m"
+}
+
 while test -n "$1"; do
   case "$1" in
   --help|-h)
@@ -75,6 +81,8 @@ if [[ "$FACTER_init_role" == "" || "$FACTER_init_env" == "" ]]; then
   echo $usagemessage
   exit 1
 fi
+
+retrieve_facter init_reponame
 
 # Link /etc/puppet to our private repo.
 PUPPET_DIR="$FACTER_init_repodir/puppet"
