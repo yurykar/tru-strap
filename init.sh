@@ -133,7 +133,7 @@ puppet apply -e "file { '/etc/hiera.yaml': ensure => link, target => '/etc/puppe
 echo "Installing RVM and latest Ruby"
 curl -sSL https://get.rvm.io | bash
 source /usr/local/rvm/scripts/rvm
-rvm install 2.1.1
+rvm install ruby-2.1.2
 #rvm install $(rvm list remote | grep ruby | tail -1 | awk '{ print $NF }') --binary
 
 # # Use RVM to select specific Ruby version (2.1+) for use with Librarian-puppet
