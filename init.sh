@@ -24,7 +24,7 @@ fi
 echo -n "Installing Puppetlabs repo"
 progress_bar yum install -y http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm
 echo -n "Installing Puppet"
-progress_bar yum install -y puppet 2> /dev/null
+progress_bar yum install -y puppet
 
 # Process command line params
 
@@ -47,9 +47,9 @@ while test -n "$1"; do
   case "$1" in
   --help|-h)
     print_help
-    exit 
+    exit
     ;;
-  --version|-v) 
+  --version|-v)
     print_version $PROGNAME $VERSION
     exit
     ;;
