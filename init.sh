@@ -38,7 +38,9 @@ function print_help {
 
 function set_facter {
   export FACTER_$1=$2
-  puppet apply -e "file { '/etc/facter': ensure => directory, mode => 0600 } -> file { '/etc/facter/facts.d': ensure => directory, mode => 0600 } -> file { '/etc/facter/facts.d/$1.txt': ensure => present, mode => 0600, content => '$1=$2' }" --logdest syslog > /dev/null
+  puppet apply -e "file { '/etc/facter': ensure => directory, mode => 0600 } -> \
+                   file { '/etc/facter/facts.d': ensure => directory, mode => 0600 } -> \
+                   file { '/etc/facter/facts.d/$1.txt': ensure => present, mode => 0600, content => '$1=$2' }" --logdest syslog > /dev/null
   echo -n "Facter says $1 is:"
   echo -e "\e[0;32m $(facter $1) \e[0m"
 }
@@ -81,6 +83,14 @@ while test -n "$1"; do
     set_facter init_repodir $2
     shift
     ;;
+  --eyamlpublickeyfile|-j)
+    set_facter init_eyamlpublickeyfile $2
+    shift
+    ;;
+  --eyamlprivatekeyfile|-m)
+    set_facter init_eyamlprivatekeyfile $2
+    shift
+    ;;
   --debug)
     shift
     ;;
@@ -94,7 +104,7 @@ while test -n "$1"; do
   shift
 done
 
-usagemessage="Error, USAGE: $(basename $0) --role|-r --environment|-e --repouser|-u --reponame|-n --repoprivkeyfile|-k [--repobranch|-b] [--repodir|-d] [--help|-h] [--version|-v]"
+usagemessage="Error, USAGE: $(basename $0) --role|-r --environment|-e --repouser|-u --reponame|-n --repoprivkeyfile|-k [--repobranch|-b] [--repodir|-d] [--eyamlpublickeyfile|-j] [--eyamlprivatekeyfile|-] [--help|-h] [--version|-v]"
 
 # Define required parameters.
 if [[ "$FACTER_init_role" == "" || "$FACTER_init_env" == "" || "$FACTER_init_repouser" == "" || "$FACTER_init_reponame" == "" || "$FACTER_init_repoprivkeyfile" == "" ]]; then
@@ -105,14 +115,15 @@ fi
 # Set Git login params
 echo "Injecting private ssh key"
 GITHUB_PRI_KEY=$(cat $FACTER_init_repoprivkeyfile)
-puppet apply -v -e "file {'ssh': path => '/root/.ssh/',ensure => directory}" > /dev/null
-puppet apply -v -e "file {'id_rsa': path => '/root/.ssh/id_rsa',ensure => present, mode    => 0600, content => '$GITHUB_PRI_KEY'}" > /dev/null
-puppet apply -v -e "file {'config': path => '/root/.ssh/config',ensure => present, mode    => 0644, content => 'StrictHostKeyChecking=no'}" > /dev/null
-puppet apply -e "package { 'git': ensure => present }" > /dev/null
+puppet apply -v -e "file {'ssh': path => '/root/.ssh/',ensure => directory} -> \
+                    file {'id_rsa': path => '/root/.ssh/id_rsa',ensure => present, mode    => 0600, content => '$GITHUB_PRI_KEY'} -> \
+                    file {'config': path => '/root/.ssh/config',ensure => present, mode    => 0644, content => 'StrictHostKeyChecking=no'} -> \
+                    package { 'git': ensure => present }" > /dev/null
 
 # Set some defaults if they aren't given on the command line.
 [ -z "$FACTER_init_repobranch" ] && set_facter init_repobranch master
 [ -z "$FACTER_init_repodir" ] && set_facter init_repodir /opt/$FACTER_init_reponame
+
 # Clone private repo.
 puppet apply -e "file { '$FACTER_init_repodir': ensure => absent, force => true }" > /dev/null
 echo "Cloning $FACTER_init_repouser/$FACTER_init_reponame repo"
@@ -128,6 +139,29 @@ fi
 PUPPET_DIR="$FACTER_init_repodir/puppet"
 rm -rf /etc/puppet ; ln -s $PUPPET_DIR /etc/puppet
 puppet apply -e "file { '/etc/hiera.yaml': ensure => link, target => '/etc/puppet/hiera.yaml' }" > /dev/null
+
+# Install eyaml gem
+echo -n "Installing eyaml gem"
+progress_bar gem install hiera-eyaml --no-ri --no-rdoc
+
+# If no eyaml keys have been provided, create some
+if [ -z "$FACTER_init_eyamlpublickeyfile" ] && [ -z "$FACTER_init_eyamlprivatekeyfile" ] && [ ! -d "/etc/puppet/secure/keys" ]
+then
+  puppet apply -v -e "file {'/etc/puppet/secure': ensure => directory, mode => 0500} -> \
+                      file {'/etc/puppet/secure/keys': ensure => directory, mode => 0500}" > /dev/null
+  cd /etc/puppet/secure
+  echo -n "Creating eyaml key pair"
+  progress_bar eyaml createkeys
+else
+# Or use the ones provided 
+  echo "Injecting eyaml keys"
+  EYAML_PUB_KEY=$(cat $FACTER_init_eyamlpublickeyfile)
+  EYAML_PRI_KEY=$(cat $FACTER_init_eyamlprivatekeyfile)
+  puppet apply -v -e "file {'/etc/puppet/secure': ensure => directory, mode => 0500} -> \
+                      file {'/etc/puppet/secure/keys': ensure => directory, mode => 0500} -> \
+                      file {'/etc/puppet/secure/keys/public_key.pkcs7.pem': ensure => present, mode => 0400, content => '$EYAML_PUB_KEY'} -> \
+                      file {'/etc/puppet/secure/keys/private_key.pkcs7.pem': ensure => present, mode => 0400, content => '$EYAML_PRI_KEY'}" > /dev/null
+fi
 
 # # Install RVM to manage Ruby versions
 echo "Installing RVM and latest Ruby"

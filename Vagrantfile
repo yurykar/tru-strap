@@ -78,7 +78,18 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     $init_repobranch = 'master'
   end
 
-  # Tru-Strap
-  config.vm.provision :shell, :path => "init.sh", :args => "--role #{$init_role} --environment #{$init_env} --repouser #{$init_repouser} --reponame #{$init_reponame} --repobranch #{$init_repobranch} --repoprivkeyfile /vagrant/#{$init_repoprivkeyfile}"
+  trustrap_args = "--role #{$init_role} --environment #{$init_env} --repouser #{$init_repouser} --reponame #{$init_reponame} --repobranch #{$init_repobranch} --repoprivkeyfile /vagrant/#{$init_repoprivkeyfile}"
 
+  if ENV['init_eyamlprivatekeyfile']
+    $init_eyamlprivatekeyfile = ENV['init_eyamlprivatekeyfile']
+    trustrap_args << " --eyamlprivatekeyfile /vagrant/#{$init_eyamlprivatekeyfile}"
+  end
+
+  if ENV['init_eyamlpublickeyfile']
+    $init_eyamlpublickeyfile = ENV['init_eyamlpublickeyfile']
+    trustrap_args << " --eyamlpublickeyfile /vagrant/#{$init_eyamlpublickeyfile}"
+  end
+
+  # Tru-Strap
+  config.vm.provision :shell, :path => "init.sh", :args => trustrap_args
 end
