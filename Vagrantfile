@@ -80,14 +80,14 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   trustrap_args = "--role #{$init_role} --environment #{$init_env} --repouser #{$init_repouser} --reponame #{$init_reponame} --repobranch #{$init_repobranch} --repoprivkeyfile /vagrant/#{$init_repoprivkeyfile}"
 
-  if ENV['init_eyamlprivatekeyfile']
-    $init_eyamlprivatekeyfile = ENV['init_eyamlprivatekeyfile']
-    trustrap_args << " --eyamlprivatekeyfile /vagrant/#{$init_eyamlprivatekeyfile}"
+  if ENV['init_eyamlprivkeyfile']
+    $init_eyamlprivkeyfile = ENV['init_eyamlprivkeyfile']
+    trustrap_args << " --eyamlprivkeyfile /vagrant/#{$init_eyamlprivkeyfile}"
   end
 
-  if ENV['init_eyamlpublickeyfile']
-    $init_eyamlpublickeyfile = ENV['init_eyamlpublickeyfile']
-    trustrap_args << " --eyamlpublickeyfile /vagrant/#{$init_eyamlpublickeyfile}"
+  if ENV['init_eyamlpubkeyfile']
+    $init_eyamlpubkeyfile = ENV['init_eyamlpubkeyfile']
+    trustrap_args << " --eyamlpubkeyfile /vagrant/#{$init_eyamlpubkeyfile}"
   end
 
   # Tru-Strap

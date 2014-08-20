@@ -83,12 +83,12 @@ while test -n "$1"; do
     set_facter init_repodir $2
     shift
     ;;
-  --eyamlpublickeyfile|-j)
-    set_facter init_eyamlpublickeyfile $2
+  --eyamlpubkeyfile|-j)
+    set_facter init_eyamlpubkeyfile $2
     shift
     ;;
-  --eyamlprivatekeyfile|-m)
-    set_facter init_eyamlprivatekeyfile $2
+  --eyamlprivkeyfile|-m)
+    set_facter init_eyamlprivkeyfile $2
     shift
     ;;
   --debug)
@@ -104,7 +104,7 @@ while test -n "$1"; do
   shift
 done
 
-usagemessage="Error, USAGE: $(basename $0) --role|-r --environment|-e --repouser|-u --reponame|-n --repoprivkeyfile|-k [--repobranch|-b] [--repodir|-d] [--eyamlpublickeyfile|-j] [--eyamlprivatekeyfile|-] [--help|-h] [--version|-v]"
+usagemessage="Error, USAGE: $(basename $0) --role|-r --environment|-e --repouser|-u --reponame|-n --repoprivkeyfile|-k [--repobranch|-b] [--repodir|-d] [--eyamlpubkeyfile|-j] [--eyamlprivkeyfile|-] [--help|-h] [--version|-v]"
 
 # Define required parameters.
 if [[ "$FACTER_init_role" == "" || "$FACTER_init_env" == "" || "$FACTER_init_repouser" == "" || "$FACTER_init_reponame" == "" || "$FACTER_init_repoprivkeyfile" == "" ]]; then
@@ -145,7 +145,7 @@ echo -n "Installing eyaml gem"
 progress_bar gem install hiera-eyaml --no-ri --no-rdoc
 
 # If no eyaml keys have been provided, create some
-if [ -z "$FACTER_init_eyamlpublickeyfile" ] && [ -z "$FACTER_init_eyamlprivatekeyfile" ] && [ ! -d "/etc/puppet/secure/keys" ]
+if [ -z "$FACTER_init_eyamlpubkeyfile" ] && [ -z "$FACTER_init_eyamlprivkeyfile" ] && [ ! -d "/etc/puppet/secure/keys" ]
 then
   puppet apply -v -e "file {'/etc/puppet/secure': ensure => directory, mode => 0500} -> \
                       file {'/etc/puppet/secure/keys': ensure => directory, mode => 0500}" > /dev/null
@@ -155,8 +155,8 @@ then
 else
 # Or use the ones provided 
   echo "Injecting eyaml keys"
-  EYAML_PUB_KEY=$(cat $FACTER_init_eyamlpublickeyfile)
-  EYAML_PRI_KEY=$(cat $FACTER_init_eyamlprivatekeyfile)
+  EYAML_PUB_KEY=$(cat $FACTER_init_eyamlpubkeyfile)
+  EYAML_PRI_KEY=$(cat $FACTER_init_eyamlprivkeyfile)
   puppet apply -v -e "file {'/etc/puppet/secure': ensure => directory, mode => 0500} -> \
                       file {'/etc/puppet/secure/keys': ensure => directory, mode => 0500} -> \
                       file {'/etc/puppet/secure/keys/public_key.pkcs7.pem': ensure => present, mode => 0400, content => '$EYAML_PUB_KEY'} -> \
