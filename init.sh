@@ -178,10 +178,10 @@ ENV_BASE_PUPPETFILE=${FACTER_init_env}/Puppetfile.base
 ENV_ROLE_PUPPETFILE=${FACTER_init_env}/Puppetfile.${FACTER_init_role}
 BASE_PUPPETFILE=Puppetfile.base
 ROLE_PUPPETFILE=Puppetfile.${FACTER_init_role}
-if [ -f $ENV_BASE_PUPPETFILE ]; then
+if [ -f /etc/puppet/Puppetfiles/$ENV_BASE_PUPPETFILE ]; then
   BASE_PUPPETFILE=$ENV_BASE_PUPPETFILE
 fi
-if [ -f $ENV_ROLE_PUPPETFILE ]; then
+if [ -f /etc/puppet/Puppetfiles/$ENV_ROLE_PUPPETFILE ]; then
   ROLE_PUPPETFILE=$ENV_ROLE_PUPPETFILE
 fi
 rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Puppetfiles/$ROLE_PUPPETFILE > /etc/puppet/Puppetfile
