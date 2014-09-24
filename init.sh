@@ -153,7 +153,7 @@ then
   echo -n "Creating eyaml key pair"
   progress_bar eyaml createkeys
 else
-# Or use the ones provided 
+# Or use the ones provided
   echo "Injecting eyaml keys"
   EYAML_PUB_KEY=$(cat $FACTER_init_eyamlpubkeyfile)
   EYAML_PRI_KEY=$(cat $FACTER_init_eyamlprivkeyfile)
@@ -174,7 +174,17 @@ rvm use ruby
 
 # Install and execute Librarian Puppet
 # Create symlink to role specific Puppetfile
-rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/Puppetfile.base /etc/puppet/Puppetfiles/Puppetfile.$FACTER_init_role > /etc/puppet/Puppetfile
+ENV_BASE_PUPPETFILE=${FACTER_init_env}/Puppetfile.base
+ENV_ROLE_PUPPETFILE=${FACTER_init_env}/Puppetfile.${FACTER_init_role}
+BASE_PUPPETFILE=Puppetfile.base
+ROLE_PUPPETFILE=Puppetfile.${FACTER_init_role}
+if [ -f /etc/puppet/Puppetfiles/$ENV_BASE_PUPPETFILE ]; then
+  BASE_PUPPETFILE=$ENV_BASE_PUPPETFILE
+fi
+if [ -f /etc/puppet/Puppetfiles/$ENV_ROLE_PUPPETFILE ]; then
+  ROLE_PUPPETFILE=$ENV_ROLE_PUPPETFILE
+fi
+rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Puppetfiles/$ROLE_PUPPETFILE > /etc/puppet/Puppetfile
 echo -n "Installing librarian-puppet"
 progress_bar gem install librarian-puppet --no-ri --no-rdoc
 echo -n "Installing Puppet gem"
