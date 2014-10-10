@@ -192,8 +192,6 @@ progress_bar gem install puppet --no-ri --no-rdoc
 cd $PUPPET_DIR
 echo -n "Installing Puppet modules"
 progress_bar librarian-puppet install --verbose
-echo -n "Updating Puppet modules"
-progress_bar librarian-puppet update --verbose
 librarian-puppet show
 
 # # Use RVM to revert Ruby version to back to system default (1.8.7)
