@@ -201,3 +201,17 @@ rvm --default use system
 echo ""
 echo "Running puppet apply"
 puppet apply /etc/puppet/manifests/site.pp
+PUPPET_EXIT=$?
+
+# Print out the top 10 slowest Puppet resources
+echo ""
+echo "Top 10 slowest Puppet resources"
+echo "==============================="
+PERFORMANCE_DATA=( $(grep evaluation_time /var/lib/puppet/reports/*/*.yaml | awk '{print $3}' | sort -n | tail -10 ) )
+for i in ${PERFORMANCE_DATA[*]}
+do
+  echo -n "${i}s - "
+  echo $(grep -B 3 $i /var/lib/puppet/reports/*/*.yaml | head -1 | awk '{print $2 $3}' )
+done | tac
+
+exit $PUPPET_EXIT
