@@ -153,7 +153,7 @@ then
   echo -n "Creating eyaml key pair"
   progress_bar eyaml createkeys
 else
-# Or use the ones provided 
+# Or use the ones provided
   echo "Injecting eyaml keys"
   EYAML_PUB_KEY=$(cat $FACTER_init_eyamlpubkeyfile)
   EYAML_PRI_KEY=$(cat $FACTER_init_eyamlprivkeyfile)
@@ -167,14 +167,25 @@ fi
 echo "Installing RVM and latest Ruby"
 curl -sSL https://get.rvm.io | bash
 source /usr/local/rvm/scripts/rvm
-rvm install $(rvm list remote | grep ruby | tail -1 | awk '{ print $NF }') --binary  --max-time 30
+RUBY_VERSION=`rvm list remote | grep ruby | tail -1 | awk '{ print $NF }'`
+rvm install $RUBY_VERSION --binary  --max-time 30
 
 # # Use RVM to select specific Ruby version (2.1+) for use with Librarian-puppet
-rvm use ruby
+rvm use $RUBY_VERSION
 
 # Install and execute Librarian Puppet
 # Create symlink to role specific Puppetfile
-rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/Puppetfile.base /etc/puppet/Puppetfiles/Puppetfile.$FACTER_init_role > /etc/puppet/Puppetfile
+ENV_BASE_PUPPETFILE=${FACTER_init_env}/Puppetfile.base
+ENV_ROLE_PUPPETFILE=${FACTER_init_env}/Puppetfile.${FACTER_init_role}
+BASE_PUPPETFILE=Puppetfile.base
+ROLE_PUPPETFILE=Puppetfile.${FACTER_init_role}
+if [ -f /etc/puppet/Puppetfiles/$ENV_BASE_PUPPETFILE ]; then
+  BASE_PUPPETFILE=$ENV_BASE_PUPPETFILE
+fi
+if [ -f /etc/puppet/Puppetfiles/$ENV_ROLE_PUPPETFILE ]; then
+  ROLE_PUPPETFILE=$ENV_ROLE_PUPPETFILE
+fi
+rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Puppetfiles/$ROLE_PUPPETFILE > /etc/puppet/Puppetfile
 echo -n "Installing librarian-puppet"
 progress_bar gem install librarian-puppet --no-ri --no-rdoc
 echo -n "Installing Puppet gem"
@@ -182,8 +193,6 @@ progress_bar gem install puppet --no-ri --no-rdoc
 cd $PUPPET_DIR
 echo -n "Installing Puppet modules"
 progress_bar librarian-puppet install --verbose
-echo -n "Updating Puppet modules"
-progress_bar librarian-puppet update --verbose
 librarian-puppet show
 
 # # Use RVM to revert Ruby version to back to system default (1.8.7)
@@ -193,3 +202,17 @@ rvm --default use system
 echo ""
 echo "Running puppet apply"
 puppet apply /etc/puppet/manifests/site.pp
+PUPPET_EXIT=$?
+
+# Print out the top 10 slowest Puppet resources
+echo ""
+echo "Top 10 slowest Puppet resources"
+echo "==============================="
+PERFORMANCE_DATA=( $(grep evaluation_time /var/lib/puppet/reports/*/*.yaml | awk '{print $3}' | sort -n | tail -10 ) )
+for i in ${PERFORMANCE_DATA[*]}
+do
+  echo -n "${i}s - "
+  echo $(grep -B 3 $i /var/lib/puppet/reports/*/*.yaml | head -1 | awk '{print $2 $3}' )
+done | tac
+
+exit $PUPPET_EXIT
