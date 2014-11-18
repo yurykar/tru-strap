@@ -169,7 +169,7 @@ curl -sSL https://get.rvm.io | bash
 source /usr/local/rvm/scripts/rvm
 #RUBY_VERSION=`rvm list remote | grep ruby | tail -1 | awk '{ print $NF }'`
 RUBY_VERSION=ruby-2.1.2
-rvm install $RUBY_VERSION --binary  --max-time 30
+rvm install $RUBY_VERSION --max-time 30
 
 # # Use RVM to select specific Ruby version (2.1+) for use with Librarian-puppet
 rvm use $RUBY_VERSION
