@@ -187,6 +187,7 @@ progress_bar librarian-puppet install --verbose
 librarian-puppet show
 
 # Make things happen.
+export LC_ALL=en_GB.utf8
 echo ""
 echo "Running puppet apply"
 puppet apply /etc/puppet/manifests/site.pp
