@@ -21,13 +21,25 @@ fi
 # Install Puppet
 # RHEL
 
-echo -n "Installing Puppetlabs repo"
-progress_bar yum install -y http://yum.puppetlabs.com/puppetlabs-release-el-6.noarch.rpm
+echo -n "Uninstalling old Ruby and Puppet"
+yum remove -y ruby-* puppet-*
+
+echo -n "Installing Ruby"
+progress_bar yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm augeas-devel
+
+GEM_SOURCES=$(gem sources --list | tail -n+3 | tr '\n' ' ')
+
+for i in $GEM_SOURCES
+do
+  gem sources -r $i
+done
+
+gem sources -a https://rubygems.org/
+
 echo -n "Installing Puppet"
-progress_bar yum install -y puppet
+progress_bar gem install puppet hiera facter ruby-augeas --no-ri --no-rdoc
 
 # Process command line params
-
 function print_version {
   echo $1 $2
 }
@@ -163,17 +175,6 @@ else
                       file {'/etc/puppet/secure/keys/private_key.pkcs7.pem': ensure => present, mode => 0400, content => '$EYAML_PRI_KEY'}" > /dev/null
 fi
 
-# # Install RVM to manage Ruby versions
-echo "Installing RVM and latest Ruby"
-curl -sSL https://get.rvm.io | bash
-source /usr/local/rvm/scripts/rvm
-#RUBY_VERSION=`rvm list remote | grep ruby | tail -1 | awk '{ print $NF }'`
-RUBY_VERSION=ruby-2.1.2
-rvm install $RUBY_VERSION --max-time 30
-
-# # Use RVM to select specific Ruby version (2.1+) for use with Librarian-puppet
-rvm use $RUBY_VERSION
-
 # Install and execute Librarian Puppet
 # Create symlink to role specific Puppetfile
 ENV_BASE_PUPPETFILE=${FACTER_init_env}/Puppetfile.base
@@ -189,17 +190,13 @@ fi
 rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Puppetfiles/$ROLE_PUPPETFILE > /etc/puppet/Puppetfile
 echo -n "Installing librarian-puppet"
 progress_bar gem install librarian-puppet --no-ri --no-rdoc
-echo -n "Installing Puppet gem"
-progress_bar gem install puppet --no-ri --no-rdoc
 cd $PUPPET_DIR
 echo -n "Installing Puppet modules"
 progress_bar librarian-puppet install --verbose
 librarian-puppet show
 
-# # Use RVM to revert Ruby version to back to system default (1.8.7)
-rvm --default use system
-
 # Make things happen.
+export LC_ALL=en_GB.utf8
 echo ""
 echo "Running puppet apply"
 puppet apply /etc/puppet/manifests/site.pp
