@@ -27,13 +27,6 @@ yum remove -y ruby-* puppet-*
 echo -n "Installing Ruby"
 progress_bar yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm augeas-devel
 
-GEM_SOURCES=$(gem sources --list | tail -n+3 | tr '\n' ' ')
-
-for i in $GEM_SOURCES
-do
-  gem sources -r $i
-done
-
 gem sources -a https://rubygems.org/
 
 echo -n "Installing Puppet"
