@@ -6,6 +6,7 @@ VERSION=0.0.1
 
 if [ ${!#} == "--debug" ]
 then
+g
   function progress_bar {
   $@
   }
@@ -30,6 +31,7 @@ progress_bar yum install -y ncurses-devel
 
 gem sources -a https://rubygems.org/
 gem sources -a https://tokyo-m.rubygems.org/
+gem sources -a http://mirror.ops.rhcloud.com/mirror/ruby/
 
 echo -n "Installing Puppet"
 progress_bar gem install puppet hiera facter ruby-augeas --no-ri --no-rdoc
