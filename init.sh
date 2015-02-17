@@ -6,7 +6,6 @@ VERSION=0.0.1
 
 if [ ${!#} == "--debug" ]
 then
-
   function progress_bar {
   $@
   }
