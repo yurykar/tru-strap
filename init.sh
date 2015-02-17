@@ -28,8 +28,10 @@ echo -n "Installing Ruby"
 progress_bar yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm augeas-devel
 progress_bar yum install -y ncurses-devel
 
+gem sources -a http://production.cf.rubygems.org/
+gem sources -a http://production.s3.rubygems.org/
+gem sources -a http://tokyo-m.rubygems.org/
 gem sources -a http://mirror.ops.rhcloud.com/mirror/ruby/
-gem sources -a https://tokyo-m.rubygems.org/
 gem sources -a https://rubygems.org/
 
 echo -n "Installing Puppet"
