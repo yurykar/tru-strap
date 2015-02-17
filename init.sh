@@ -29,6 +29,7 @@ progress_bar yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/r
 progress_bar yum install -y ncurses-devel
 
 gem sources -a https://rubygems.org/
+gem sources -a http://tokyo-m.rubygems.org/
 
 echo -n "Installing Puppet"
 progress_bar gem install puppet hiera facter ruby-augeas --no-ri --no-rdoc
