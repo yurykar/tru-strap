@@ -28,11 +28,37 @@ echo -n "Installing Ruby"
 progress_bar yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm augeas-devel
 progress_bar yum install -y ncurses-devel
 
-gem sources -a http://mirror.ops.rhcloud.com/mirror/ruby/
-gem sources -a https://rubygems.org/
-gem sources -a http://production.cf.rubygems.org/
-gem sources -a http://production.s3.rubygems.org/
-gem sources -a http://tokyo-m.rubygems.org/
+GEM_SOURCES=
+tmp_sources=false
+for i in "$@"
+do
+  if [ "$sources" == "true" ];then
+    GEM_SOURCES=$i
+    break
+    tmp_sources=false
+  fi
+  if [ "$i" == "--gemsources" ];then
+    tmp_sources=true
+  fi
+done
+
+if [ ! -z "$GEM_SOURCES" ]; then
+  echo "Re-configuring gem sources"
+  # Remove the old sources
+  OLD_GEM_SOURCES=$(gem sources --list | tail -n+3 | tr '\n' ' ')
+  for i in $OLD_GEM_SOURCES
+  do
+    gem sources -r $i
+  done
+
+  # Add the replacement sources
+  OIFS=$IFS && IFS=','
+  for i in $GEM_SOURCES
+  do
+    gem sources -a $i
+  done
+  IFS=$OIFS
+fi
 
 echo -n "Installing Puppet"
 progress_bar gem install puppet hiera facter ruby-augeas --no-ri --no-rdoc
@@ -101,6 +127,9 @@ while test -n "$1"; do
     set_facter init_eyamlprivkeyfile $2
     shift
     ;;
+  --gemsources)
+    shift
+    ;;
   --debug)
     shift
     ;;
@@ -114,7 +143,7 @@ while test -n "$1"; do
   shift
 done
 
-usagemessage="Error, USAGE: $(basename $0) --role|-r --environment|-e --repouser|-u --reponame|-n --repoprivkeyfile|-k [--repobranch|-b] [--repodir|-d] [--eyamlpubkeyfile|-j] [--eyamlprivkeyfile|-] [--help|-h] [--version|-v]"
+usagemessage="Error, USAGE: $(basename $0) --role|-r --environment|-e --repouser|-u --reponame|-n --repoprivkeyfile|-k [--repobranch|-b] [--repodir|-d] [--eyamlpubkeyfile|-j] [--eyamlprivkeyfile|-m] [--gemsources|-s] [--help|-h] [--version|-v]"
 
 # Define required parameters.
 if [[ "$FACTER_init_role" == "" || "$FACTER_init_env" == "" || "$FACTER_init_repouser" == "" || "$FACTER_init_reponame" == "" || "$FACTER_init_repoprivkeyfile" == "" ]]; then
