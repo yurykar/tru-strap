@@ -32,13 +32,14 @@ while test -n "$1"; do
   case "$1" in
   --gemsources|-s)
     GEM_SOURCES=$2
-    exit
+    shift
     ;;
   esac
   shift
 done
 
 if [ ! -z "$GEM_SOURCES" ]; then
+  echo -n "Re-configuring gem sources"
   # Remove the old sources
   OLD_GEM_SOURCES=$(gem sources --list | tail -n+3 | tr '\n' ' ')
   for i in $OLD_GEM_SOURCES
