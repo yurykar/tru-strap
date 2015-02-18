@@ -28,11 +28,32 @@ echo -n "Installing Ruby"
 progress_bar yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm augeas-devel
 progress_bar yum install -y ncurses-devel
 
-gem sources -a http://mirror.ops.rhcloud.com/mirror/ruby/
-gem sources -a https://rubygems.org/
-gem sources -a http://production.cf.rubygems.org/
-gem sources -a http://production.s3.rubygems.org/
-gem sources -a http://tokyo-m.rubygems.org/
+while test -n "$1"; do
+  case "$1" in
+  --gemsources|-s)
+    GEM_SOURCES=$2
+    exit
+    ;;
+  esac
+  shift
+done
+
+if [ ! -z "$GEM_SOURCES" ]; then
+  # Remove the old sources
+  OLD_GEM_SOURCES=$(gem sources --list | tail -n+3 | tr '\n' ' ')
+  for i in $OLD_GEM_SOURCES
+  do
+    gem sources -r $i
+  done
+
+  # Add the replacement sources
+  OIFS=$IFS
+  for i in $GEM_SOURCES
+  do
+    gem sources -a $i
+  done
+  IFS=$OIFS
+fi
 
 echo -n "Installing Puppet"
 progress_bar gem install puppet hiera facter ruby-augeas --no-ri --no-rdoc
