@@ -39,7 +39,7 @@ while test -n "$1"; do
 done
 
 if [ ! -z "$GEM_SOURCES" ]; then
-  echo -n "Re-configuring gem sources"
+  echo "Re-configuring gem sources"
   # Remove the old sources
   OLD_GEM_SOURCES=$(gem sources --list | tail -n+3 | tr '\n' ' ')
   for i in $OLD_GEM_SOURCES
@@ -48,7 +48,7 @@ if [ ! -z "$GEM_SOURCES" ]; then
   done
 
   # Add the replacement sources
-  OIFS=$IFS
+  OIFS=$IFS && IFS=','
   for i in $GEM_SOURCES
   do
     gem sources -a $i
