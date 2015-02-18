@@ -28,14 +28,18 @@ echo -n "Installing Ruby"
 progress_bar yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm augeas-devel
 progress_bar yum install -y ncurses-devel
 
-while test -n "$1"; do
-  case "$1" in
-  --gemsources|-s)
-    GEM_SOURCES=$2
-    shift
-    ;;
-  esac
-  shift
+GEM_SOURCES=
+tmp_sources=false
+for i in "$@"
+do
+  if [ "$sources" == "true" ];then
+    GEM_SOURCES=$i
+    break
+    tmp_sources=false
+  fi
+  if [ "$i" == "--gemsources" ];then
+    tmp_sources=true
+  fi
 done
 
 if [ ! -z "$GEM_SOURCES" ]; then
