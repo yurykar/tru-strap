@@ -32,7 +32,7 @@ GEM_SOURCES=
 tmp_sources=false
 for i in "$@"
 do
-  if [ "$sources" == "true" ];then
+  if [ "$tmp_sources" == "true" ];then
     GEM_SOURCES=$i
     break
     tmp_sources=false
