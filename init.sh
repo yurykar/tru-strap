@@ -55,7 +55,20 @@ if [ ! -z "$GEM_SOURCES" ]; then
   OIFS=$IFS && IFS=','
   for i in $GEM_SOURCES
   do
-    gem sources -a $i
+    MAX_RETRIES=5
+    export attempts=1
+    exit_code=1
+    while [ $exit_code -ne 0 ] && [ $attempts -le ${MAX_RETRIES} ]
+    do
+      gem sources -a $i
+      exit_code=$?
+      if [ $exit_code -ne 0 ]; then
+        sleep_time=$((attempts * 10))
+        echo Sleeping for ${sleep_time}s before retrying ${attempts}/${MAX_RETRIES}
+        sleep ${sleep_time}s
+        attempts=$((attempts + 1))
+      fi
+    done
   done
   IFS=$OIFS
 fi
