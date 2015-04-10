@@ -247,8 +247,10 @@ if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_modu
   echo -n "Downloading pre-packed Puppet modules from cache..."
   curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
   tar zxpf modules.tar.gz
+  echo "================="
   echo "Unpacked modules:"
   find ./modules -maxdepth 1 -type d | cut -d '/' -f 3 
+  echo "================="
 else
   echo -n "Installing librarian-puppet"
   progress_bar gem install librarian-puppet --no-ri --no-rdoc
