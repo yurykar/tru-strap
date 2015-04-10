@@ -243,7 +243,7 @@ MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz
 
 if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_moduleshttpcache}/$MODULE_ARCH  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
   echo -n "using Puppet modules from cache"
-  curl -o modules.tar.gz curl ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
+  curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
   tar zxpvf modules.tar.gz
 else
   echo -n "Installing librarian-puppet"
