@@ -244,9 +244,11 @@ MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz
 cd $PUPPET_DIR
 
 if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_moduleshttpcache}/$MODULE_ARCH  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
-  echo -n "using Puppet modules from cache"
+  echo -n "Downloading pre-packed Puppet modules from cache..."
   curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
-  tar zxpvf modules.tar.gz
+  tar zxpf modules.tar.gz
+  echo "Unpacked modules:"
+  find ./modules -maxdepth 1 -type d | cut -d '/' -f 3 
 else
   echo -n "Installing librarian-puppet"
   progress_bar gem install librarian-puppet --no-ri --no-rdoc
