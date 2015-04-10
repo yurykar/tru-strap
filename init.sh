@@ -241,6 +241,8 @@ rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc
 PUPPETFILE_MD5SUM=$(md5sum $PUPPETFILE | cut -d " " -f 1)
 MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz
 
+cd $PUPPET_DIR
+
 if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_moduleshttpcache}/$MODULE_ARCH  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
   echo -n "using Puppet modules from cache"
   curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
@@ -248,7 +250,6 @@ if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_modu
 else
   echo -n "Installing librarian-puppet"
   progress_bar gem install librarian-puppet --no-ri --no-rdoc
-  cd $PUPPET_DIR
   echo -n "Installing Puppet modules"
   progress_bar librarian-puppet install --verbose
   librarian-puppet show
