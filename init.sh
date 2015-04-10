@@ -74,7 +74,7 @@ if [ ! -z "$GEM_SOURCES" ]; then
 fi
 
 echo -n "Installing Puppet"
-progress_bar gem install puppet hiera facter ruby-augeas --no-ri --no-rdoc
+progress_bar gem install puppet -v 3.7.4 hiera facter ruby-augeas --no-ri --no-rdoc
 
 # Process command line params
 function print_version {
