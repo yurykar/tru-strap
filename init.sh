@@ -241,8 +241,6 @@ rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc
 PUPPETFILE_MD5SUM=$(md5sum $PUPPETFILE | cut -d " " -f 1)
 MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz
 
-
-
 if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_moduleshttpcache}/$MODULE_ARCH  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
   echo -n "using Puppet modules from cache"
   curl -o modules.tar.gz curl ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
