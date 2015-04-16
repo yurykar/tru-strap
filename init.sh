@@ -168,8 +168,8 @@ fi
 echo "Injecting private ssh key"
 GITHUB_PRI_KEY=$(cat $FACTER_init_repoprivkeyfile)
 puppet apply -v -e "file {'ssh': path => '/root/.ssh/',ensure => directory} -> \
-                    file {'id_rsa': path => '/root/.ssh/id_rsa',ensure => present, mode    => 0600, content => '$GITHUB_PRI_KEY'} -> \
-                    file {'config': path => '/root/.ssh/config',ensure => present, mode    => 0644, content => 'StrictHostKeyChecking=no'} -> \
+                    file {'id_rsa': path => '/root/.ssh/id_rsa',ensure => present, mode    => '0600', content => '$GITHUB_PRI_KEY'} -> \
+                    file {'config': path => '/root/.ssh/config',ensure => present, mode    => '0644', content => 'StrictHostKeyChecking=no'} -> \
                     package { 'git': ensure => present }" > /dev/null
 
 # Set some defaults if they aren't given on the command line.
