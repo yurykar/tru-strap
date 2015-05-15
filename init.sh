@@ -146,7 +146,7 @@ while test -n "$1"; do
   --moduleshttpcache|-c)
     set_facter init_moduleshttpcache $2
     shift
-    ;;    
+    ;;
   --gemsources)
     shift
     ;;
@@ -235,7 +235,7 @@ if [ -f /etc/puppet/Puppetfiles/$ENV_ROLE_PUPPETFILE ]; then
   ROLE_PUPPETFILE=$ENV_ROLE_PUPPETFILE
 fi
 PUPPETFILE=/etc/puppet/Puppetfile
-rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Puppetfiles/$ROLE_PUPPETFILE > $PUPPETFILE
+rm -f $PUPPETFILE ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Puppetfiles/$ROLE_PUPPETFILE > $PUPPETFILE
 
 
 PUPPETFILE_MD5SUM=$(md5sum $PUPPETFILE | cut -d " " -f 1)
@@ -249,7 +249,7 @@ if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_modu
   tar zxpf modules.tar.gz
   echo "================="
   echo "Unpacked modules:"
-  find ./modules -maxdepth 1 -type d | cut -d '/' -f 3 
+  find ./modules -maxdepth 1 -type d | cut -d '/' -f 3
   echo "================="
 else
   echo -n "Installing librarian-puppet"
