@@ -28,6 +28,9 @@ echo -n "Installing Ruby"
 progress_bar yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm augeas-devel
 progress_bar yum install -y ncurses-devel
 
+echo -n "Installing curl"
+progress_bar yum install -y curl
+
 GEM_SOURCES=
 tmp_sources=false
 for i in "$@"
@@ -140,6 +143,10 @@ while test -n "$1"; do
     set_facter init_eyamlprivkeyfile $2
     shift
     ;;
+  --moduleshttpcache|-c)
+    set_facter init_moduleshttpcache $2
+    shift
+    ;;    
   --gemsources)
     shift
     ;;
@@ -227,13 +234,30 @@ fi
 if [ -f /etc/puppet/Puppetfiles/$ENV_ROLE_PUPPETFILE ]; then
   ROLE_PUPPETFILE=$ENV_ROLE_PUPPETFILE
 fi
-rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Puppetfiles/$ROLE_PUPPETFILE > /etc/puppet/Puppetfile
-echo -n "Installing librarian-puppet"
-progress_bar gem install librarian-puppet --no-ri --no-rdoc
+PUPPETFILE=/etc/puppet/Puppetfile
+rm -f /etc/puppet/Puppetfile ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Puppetfiles/$ROLE_PUPPETFILE > $PUPPETFILE
+
+
+PUPPETFILE_MD5SUM=$(md5sum $PUPPETFILE | cut -d " " -f 1)
+MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz
+
 cd $PUPPET_DIR
-echo -n "Installing Puppet modules"
-progress_bar librarian-puppet install --verbose
-librarian-puppet show
+
+if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_moduleshttpcache}/$MODULE_ARCH  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
+  echo -n "Downloading pre-packed Puppet modules from cache..."
+  curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
+  tar zxpf modules.tar.gz
+  echo "================="
+  echo "Unpacked modules:"
+  find ./modules -maxdepth 1 -type d | cut -d '/' -f 3 
+  echo "================="
+else
+  echo -n "Installing librarian-puppet"
+  progress_bar gem install librarian-puppet --no-ri --no-rdoc
+  echo -n "Installing Puppet modules"
+  progress_bar librarian-puppet install --verbose
+  librarian-puppet show
+fi
 
 # Make things happen.
 export LC_ALL=en_GB.utf8
