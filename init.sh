@@ -18,6 +18,17 @@ else
   }
 fi
 
+function latest_artifact {
+  artifact=$(curl $1 | grep tar.gz | sort -r | head -n 1 | awk -F'"' '{print $4}')
+  temp=("${PIPESTATUS[@]}")
+  if [ ${temp[0]} -ne 0 ]
+  then
+     "Error querying artifactory1"
+  exit 1
+  fi
+  echo $artifact
+}
+
 # Install Puppet
 # RHEL
 
@@ -146,6 +157,18 @@ while test -n "$1"; do
     set_facter init_moduleshttpcache $2
     shift
     ;;
+  --artifactapiurl|-a)
+    set_facter init_artifactapiurl $2
+    shift
+    ;;
+  --prefergithub|-p)
+    set_facter init_prefergithub $2
+    shift
+    ;;
+  --artifactversion|-p)
+    set_facter init_artifactversion $2
+    shift
+    ;;
   --gemsources)
     shift
     ;;
@@ -170,6 +193,7 @@ if [[ "$FACTER_init_role" == "" || "$FACTER_init_env" == "" || "$FACTER_init_rep
   exit 1
 fi
 
+
 # Set Git login params
 echo "Injecting private ssh key"
 GITHUB_PRI_KEY=$(cat $FACTER_init_repoprivkeyfile)
@@ -181,17 +205,30 @@ puppet apply -v -e "file {'ssh': path => '/root/.ssh/',ensure => directory} -> \
 # Set some defaults if they aren't given on the command line.
 [ -z "$FACTER_init_repobranch" ] && set_facter init_repobranch master
 [ -z "$FACTER_init_repodir" ] && set_facter init_repodir /opt/$FACTER_init_reponame
+[ ! -z "$FACTER_init_artifactapiurl" ] && set_facter init_artifactbaseurl ${FACTER_init_artifactapiurl/api\/storage\//''}
+[ ! -z "$FACTER_init_artifactapiurl" ] && [ -z "$FACTER_init_artifactversion" ] && set_facter init_artifactversion $(curl $FACTER_init_artifactapiurl | grep tar.gz | sort -r | head -n 1 | awk -F'"' '{print $4}' | cut -d '/' -f 2)
 
 # Clone private repo.
 puppet apply -e "file { '$FACTER_init_repodir': ensure => absent, force => true }" > /dev/null
-echo "Cloning $FACTER_init_repouser/$FACTER_init_reponame repo"
-git clone -b $FACTER_init_repobranch git@github.com:$FACTER_init_repouser/$FACTER_init_reponame.git $FACTER_init_repodir
 
-# Exit if the clone fails
-if [ ! -d "$FACTER_init_repodir" ]
-then
-  echo "Failed to clone git@github.com:$FACTER_init_repouser/$FACTER_init_reponame.git" && exit 1
+if [ ! -z "$FACTER_init_prefergithub" ]  && $FACTER_init_prefergithub ; then
+  echo "Cloning $FACTER_init_repouser/$FACTER_init_reponame repo"
+  git clone -b $FACTER_init_repobranch git@github.com:$FACTER_init_repouser/$FACTER_init_reponame.git $FACTER_init_repodir
+
+  # Exit if the clone fails
+  if [ ! -d "$FACTER_init_repodir" ]
+  then
+    echo "Failed to clone git@github.com:$FACTER_init_repouser/$FACTER_init_reponame.git" && exit 1
+  fi
+else
+    curl "$FACTER_init_artifactbaseurl/$FACTER_init_artifactversion" -O
+    if [ $? -ne 0 ]; then
+      echo "Failed to fetch artifact $FACTER_init_artifactbaseurl/$FACTER_init_artifactversion " && exit 1
+    fi
+    mkdir $FACTER_init_repodir
+    tar -xzf $FACTER_init_artifactversion -C $FACTER_init_repodir --strip-components=1
 fi
+
 
 # Link /etc/puppet to our private repo.
 PUPPET_DIR="$FACTER_init_repodir/puppet"
