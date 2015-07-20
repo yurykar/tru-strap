@@ -221,6 +221,7 @@ if [ ! -z "$FACTER_init_prefergithub" ]  && $FACTER_init_prefergithub ; then
     echo "Failed to clone git@github.com:$FACTER_init_repouser/$FACTER_init_reponame.git" && exit 1
   fi
 else
+    echo "Downloading artifact: $FACTER_init_artifactversion"
     curl "$FACTER_init_artifactbaseurl/$FACTER_init_artifactversion" -O
     if [ $? -ne 0 ]; then
       echo "Failed to fetch artifact $FACTER_init_artifactbaseurl/$FACTER_init_artifactversion " && exit 1
