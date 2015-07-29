@@ -223,8 +223,8 @@ fi
 
 # Link /etc/puppet to our private repo.
 PUPPET_DIR="$FACTER_init_repodir/puppet"
-rm -rf /etc/puppet
-rm /etc/hiera.yaml
+rm -rf /etc/puppet > /dev/null 2>&1
+rm /etc/hiera.yaml > /dev/null 2>&1
 ln -s $PUPPET_DIR /etc/puppet
 ln -s /etc/puppet/hiera.yaml /etc/hiera.yaml
 
