@@ -40,12 +40,12 @@ function gem_install {
 ruby -v  > /dev/null 2>&1
 if [ $? -ne 0 ]
 then
-  yum install https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
+  yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
 fi
 
 if [ $(ruby -v | awk '{print $2}' | cut -d '.' -f 1) -lt 2 ]
 then
-  yum install https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
+  yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
 fi
 
 
