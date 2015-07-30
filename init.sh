@@ -110,7 +110,7 @@ yum_install() {
   done
 
   if [[ -n "${PACKAGE_LIST}" ]]; then
-    yum install -y "$(echo "${PACKAGE_LIST}" | xargs)"
+    yum install -y $(echo "${PACKAGE_LIST}" | xargs)
   fi
 }
 
@@ -118,7 +118,7 @@ yum_install() {
 gem_install() {
   for i in "$@"
   do
-    gem list --local "$(echo "${i}" | cut -d ':' -f 1)  | grep $(echo "${i}" | cut -d ':' -f 1)" > /dev/null 2>&1
+    gem list --local $(echo "${i}" | cut -d ':' -f 1)  | grep $(echo "${i}" | cut -d ':' -f 1) > /dev/null 2>&1
     if [[ $? == 0 ]]; then
       echo "${i} is already installed"
     else
@@ -126,7 +126,7 @@ gem_install() {
     fi
   done
   if [[ -n "$GEM_LIST" ]]; then
-    gem install "$(echo "$GEM_LIST" | xargs) --no-ri --no-rdoc"
+    gem install $(echo "$GEM_LIST" | xargs) --no-ri --no-rdoc
   fi
 }
 
