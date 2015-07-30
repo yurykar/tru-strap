@@ -5,7 +5,7 @@ main() {
     parse_args "$@"
     install_ruby
     install_yum_deps
-    set_gemsources
+    set_gemsources "$@"
     install_gem_deps
     inject_ssh_key
     clone_git_repo
