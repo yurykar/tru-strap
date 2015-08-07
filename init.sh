@@ -271,6 +271,7 @@ if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_modu
     temp=("${PIPESTATUS[@]}")
     GPG_EXIT_CODE=${temp[1]} 
   else
+    echo "no GPG_PASSWD specified $GPG_PASSWD"
     curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
   fi
   
