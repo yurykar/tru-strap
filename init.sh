@@ -250,7 +250,7 @@ rm -f $PUPPETFILE ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Pup
 
 
 PUPPETFILE_MD5SUM=$(md5sum $PUPPETFILE | cut -d " " -f 1)
-if [ -d $GPG_PASSWD ]; then
+if [ ! -d $GPG_PASSWD ]; then
   MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz.gpg
 else
   MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz
@@ -262,7 +262,7 @@ GPG_EXIT_CODE=0
 
 if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_moduleshttpcache}/$MODULE_ARCH  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
   echo -n "Downloading pre-packed Puppet modules from cache..."
-  if [ -d $GPG_PASSWD ]; then
+  if [ ! -d $GPG_PASSWD ]; then
     echo "================="
     echo "Using GPGed modules"
     echo "================="
@@ -271,7 +271,6 @@ if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_modu
     temp=("${PIPESTATUS[@]}")
     GPG_EXIT_CODE=${temp[1]} 
   else
-    echo "no GPG_PASSWD specified $GPG_PASSWD"
     curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
   fi
   
