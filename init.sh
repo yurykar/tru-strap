@@ -96,6 +96,14 @@ function set_facter {
   echo -e "\e[0;32m $(facter $1) \e[0m"
 }
 
+function run_librarian {
+  echo -n "Installing librarian-puppet"
+  progress_bar gem install librarian-puppet --no-ri --no-rdoc
+  echo -n "Installing Puppet modules"
+  progress_bar librarian-puppet install --verbose
+  librarian-puppet show
+}
+
 while test -n "$1"; do
   case "$1" in
   --help|-h)
@@ -144,6 +152,10 @@ while test -n "$1"; do
     ;;
   --moduleshttpcache|-c)
     set_facter init_moduleshttpcache $2
+    shift
+    ;;
+  --gpgpasswd)
+    GPG_PASSWD=$2
     shift
     ;;
   --gemsources)
@@ -238,24 +250,43 @@ rm -f $PUPPETFILE ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Pup
 
 
 PUPPETFILE_MD5SUM=$(md5sum $PUPPETFILE | cut -d " " -f 1)
-MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz
+if [ -d $GPG_PASSWD ]; then
+  MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz.gpg
+else
+  MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz
+fi
 
 cd $PUPPET_DIR
 
+GPG_EXIT_CODE=0
+
 if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_moduleshttpcache}/$MODULE_ARCH  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
   echo -n "Downloading pre-packed Puppet modules from cache..."
-  curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
-  tar zxpf modules.tar.gz
-  echo "================="
-  echo "Unpacked modules:"
-  find ./modules -maxdepth 1 -type d | cut -d '/' -f 3
-  echo "================="
+  if [ -d $GPG_PASSWD ]; then
+    echo "================="
+    echo "Using GPGed modules"
+    echo "================="
+    curl -o modules.tar.gz.gpg ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
+    echo $GPG_PASSWD  | gpg --passphrase-fd 0 modules.tar.gz.gpg
+    temp=("${PIPESTATUS[@]}")
+    GPG_EXIT_CODE=${temp[1]} 
+  else
+    curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
+  fi
+  
+  if [ $GPG_EXIT_CODE -eq 0 ]; then
+    tar zxpf modules.tar.gz
+    echo "================="
+    echo "Unpacked modules:"
+    find ./modules -maxdepth 1 -type d | cut -d '/' -f 3
+    echo "================="
+  else
+    echo "Seems we failed to decrypt GPG file... running librarian-puppet instead"
+    run_librarian
+  fi
+
 else
-  echo -n "Installing librarian-puppet"
-  progress_bar gem install librarian-puppet --no-ri --no-rdoc
-  echo -n "Installing Puppet modules"
-  progress_bar librarian-puppet install --verbose
-  librarian-puppet show
+  run_librarian
 fi
 
 # Make things happen.
