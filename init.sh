@@ -154,8 +154,8 @@ while test -n "$1"; do
     set_facter init_moduleshttpcache $2
     shift
     ;;
-  --gpgpasswd)
-    GPG_PASSWD=$2
+  --passwd)
+    PASSWD=$2
     shift
     ;;
   --gemsources)
@@ -250,8 +250,8 @@ rm -f $PUPPETFILE ; cat /etc/puppet/Puppetfiles/$BASE_PUPPETFILE /etc/puppet/Pup
 
 
 PUPPETFILE_MD5SUM=$(md5sum $PUPPETFILE | cut -d " " -f 1)
-if [ ! -d $GPG_PASSWD ]; then
-  MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz.gpg
+if [ ! -d $PASSWD ]; then
+  MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz.aes
 else
   MODULE_ARCH=${FACTER_init_role}.$PUPPETFILE_MD5SUM.tar.gz
 fi
@@ -262,14 +262,13 @@ GPG_EXIT_CODE=0
 
 if [[ ! -z ${FACTER_init_moduleshttpcache} && "200" == $(curl ${FACTER_init_moduleshttpcache}/$MODULE_ARCH  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
   echo -n "Downloading pre-packed Puppet modules from cache..."
-  if [ ! -d $GPG_PASSWD ]; then
+  if [ ! -d $PASSWD ]; then
     echo "================="
-    echo "Using GPGed modules"
+    echo "Using Encrypted modules"
     echo "================="
-    curl -o modules.tar.gz.gpg ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
-    echo $GPG_PASSWD  | gpg --passphrase-fd 0 modules.tar.gz.gpg
-    temp=("${PIPESTATUS[@]}")
-    GPG_EXIT_CODE=${temp[1]} 
+    curl -o modules.tar.gz.aes ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
+    openssl aes-128-cbc -d -salt -in modules.tar.gz.aes -out modules.tar.gz -k $PASSWD
+    GPG_EXIT_CODE=$?
   else
     curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
   fi
