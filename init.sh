@@ -315,7 +315,7 @@ fetch_puppet_modules() {
       echo "Using Encrypted modules"
       echo "================="
       curl -o modules.tar.gz.aes ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
-      openssl aes-128-cbc -d -salt -in modules.tar.gz.aes -out modules.tar.gz -k $PASSWD
+      openssl base64 -aes-128-cbc -d -salt -in modules.tar.gz.aes -out modules.tar.gz -k $PASSWD
       DECRYPT_EXIT_CODE=$?
     else
       curl -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
