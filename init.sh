@@ -307,7 +307,7 @@ fetch_puppet_modules() {
   cd "${PUPPET_DIR}" || exit
 
   GPG_EXIT_CODE=0
-  
+
   if [[ ! -z "${FACTER_init_moduleshttpcache}" && "200" == $(curl "${FACTER_init_moduleshttpcache}"/"${MODULE_ARCH}"  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
     echo -n "Downloading pre-packed Puppet modules from cache..."
     if [ ! -d $PASSWD ]; then
@@ -328,7 +328,7 @@ fetch_puppet_modules() {
       find ./modules -maxdepth 1 -type d | cut -d '/' -f 3
       echo "================="
     else
-      echo "Seems we failed to decrypt GPG file... running librarian-puppet instead"
+      echo "Seems we failed to decrypt archive file... running librarian-puppet instead"
       run_librarian
     fi
 
