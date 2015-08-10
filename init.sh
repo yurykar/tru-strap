@@ -279,9 +279,9 @@ inject_eyaml_keys() {
 
 function run_librarian {
   echo -n "Installing librarian-puppet"
-  progress_bar gem install librarian-puppet --no-ri --no-rdoc
+  gem install librarian-puppet --no-ri --no-rdoc
   echo -n "Installing Puppet modules"
-  progress_bar librarian-puppet install --verbose
+  librarian-puppet install --verbose
   librarian-puppet show
 }
 
