@@ -302,7 +302,11 @@ fetch_puppet_modules() {
 
 
   PUPPETFILE_MD5SUM=$(md5sum "${PUPPETFILE}" | cut -d " " -f 1)
-  MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz
+  if [[ ! -d $PASSWD ]]; then
+    MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz.aes
+  else
+    MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz
+  fi
 
   cd "${PUPPET_DIR}" || exit
 
