@@ -310,7 +310,7 @@ fetch_puppet_modules() {
 
   if [[ ! -z "${FACTER_init_moduleshttpcache}" && "200" == $(curl "${FACTER_init_moduleshttpcache}"/"${MODULE_ARCH}"  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
     echo -n "Downloading pre-packed Puppet modules from cache..."
-    if [[ ! -d $PASSWD ]; then
+    if [[ ! -d $PASSWD ]]; then
       echo "================="
       echo "Using Encrypted modules"
       echo "================="
