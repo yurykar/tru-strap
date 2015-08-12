@@ -67,7 +67,7 @@ parse_args() {
       set_facter init_moduleshttpcache "${2}"
       shift
       ;;
-    --passwd)
+    --passwd|-p)
       PASSWD="${2}"
       shift
       ;;
@@ -277,7 +277,7 @@ inject_eyaml_keys() {
   fi
 }
 
-function run_librarian {
+run_librarian() {
   echo -n "Installing librarian-puppet"
   gem install librarian-puppet --no-ri --no-rdoc
   echo -n "Installing Puppet modules"
