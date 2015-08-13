@@ -67,6 +67,10 @@ parse_args() {
       set_facter init_moduleshttpcache "${2}"
       shift
       ;;
+    --passwd|-p)
+      PASSWD="${2}"
+      shift
+      ;;
     --gemsources)
       shift
       ;;
@@ -273,6 +277,14 @@ inject_eyaml_keys() {
   fi
 }
 
+run_librarian() {
+  echo -n "Installing librarian-puppet"
+  gem install librarian-puppet --no-ri --no-rdoc
+  echo -n "Installing Puppet modules"
+  librarian-puppet install --verbose
+  librarian-puppet show
+}
+
 # Fetch the Puppet modules via the moduleshttpcache or librarian-puppet
 fetch_puppet_modules() {
   ENV_BASE_PUPPETFILE="${FACTER_init_env}/Puppetfile.base"
@@ -290,23 +302,42 @@ fetch_puppet_modules() {
 
 
   PUPPETFILE_MD5SUM=$(md5sum "${PUPPETFILE}" | cut -d " " -f 1)
-  MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz
+  if [[ ! -d $PASSWD ]]; then
+    MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz.aes
+  else
+    MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz
+  fi
 
   cd "${PUPPET_DIR}" || exit
 
+  DECRYPT_EXIT_CODE=0
+
   if [[ ! -z "${FACTER_init_moduleshttpcache}" && "200" == $(curl "${FACTER_init_moduleshttpcache}"/"${MODULE_ARCH}"  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
-    echo "Downloading pre-packed Puppet modules from cache..."
-    curl -s -o modules.tar.gz "${FACTER_init_moduleshttpcache}"/"$MODULE_ARCH"
-    tar zxpf modules.tar.gz
-    echo "================="
-    echo "Unpacked modules:"
-    find ./modules -maxdepth 1 -type d | cut -d '/' -f 3
-    echo "================="
+    echo -n "Downloading pre-packed Puppet modules from cache..."
+    if [[ ! -d $PASSWD ]]; then
+      echo "================="
+      echo "Using Encrypted modules ${FACTER_init_moduleshttpcache}/$MODULE_ARCH "
+      echo "================="
+      curl --silent -o modules.tar.gz.aes ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
+      openssl base64 -aes-128-cbc -d -salt -in modules.tar.gz.aes -out modules.tar.gz -k $PASSWD
+      DECRYPT_EXIT_CODE=$?
+    else
+      curl --silent -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
+    fi
+    
+    if [[ $DECRYPT_EXIT_CODE -eq 0 ]]; then
+      tar zxpf modules.tar.gz
+      echo "================="
+      echo "Unpacked modules:"
+      find ./modules -maxdepth 1 -type d | cut -d '/' -f 3
+      echo "================="
+    else
+      echo "Seems we failed to decrypt archive file... running librarian-puppet instead"
+      run_librarian
+    fi
+
   else
-    echo -n "Installing Puppet modules"
-    gem_install librarian-puppet
-    librarian-puppet install --verbose
-    librarian-puppet show
+    run_librarian
   fi
 }
 
