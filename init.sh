@@ -302,7 +302,7 @@ fetch_puppet_modules() {
 
 
   PUPPETFILE_MD5SUM=$(md5sum "${PUPPETFILE}" | cut -d " " -f 1)
-  if [[ ! -d $PASSWD ]]; then
+  if [[ ! -z $PASSWD ]]; then
     MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz.aes
   else
     MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz
@@ -314,12 +314,12 @@ fetch_puppet_modules() {
 
   if [[ ! -z "${FACTER_init_moduleshttpcache}" && "200" == $(curl "${FACTER_init_moduleshttpcache}"/"${MODULE_ARCH}"  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
     echo -n "Downloading pre-packed Puppet modules from cache..."
-    if [[ ! -d $PASSWD ]]; then
+    if [[ ! -z $PASSWD ]]; then
       echo "================="
       echo "Using Encrypted modules ${FACTER_init_moduleshttpcache}/$MODULE_ARCH "
       echo "================="
       curl --silent -o modules.tar.gz.aes ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
-      openssl base64 -aes-128-cbc -d -salt -in modules.tar.gz.aes -out modules.tar.gz -k $PASSWD
+      openssl -base64 -aes-128-cbc -d -salt -in modules.tar.gz.aes -out modules.tar.gz -k $PASSWD
       DECRYPT_EXIT_CODE=$?
     else
       curl --silent -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
