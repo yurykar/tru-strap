@@ -325,7 +325,7 @@ fetch_puppet_modules() {
       curl --silent -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
     fi
     
-    if [[ $DECRYPT_EXIT_CODE -eq 0 ]]; then
+    if [[ $DECRYPT_EXIT_CODE -eq 0 && -f modules.tar.gz ]] then
       tar zxpf modules.tar.gz
       echo "================="
       echo "Unpacked modules:"
