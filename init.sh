@@ -310,8 +310,6 @@ fetch_puppet_modules() {
 
   cd "${PUPPET_DIR}" || exit
 
-  DECRYPT_EXIT_CODE=0
-
   if [[ ! -z "${FACTER_init_moduleshttpcache}" && "200" == $(curl "${FACTER_init_moduleshttpcache}"/"${MODULE_ARCH}"  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
     echo -n "Downloading pre-packed Puppet modules from cache..."
     if [[ ! -z $PASSWD ]]; then
@@ -320,12 +318,14 @@ fetch_puppet_modules() {
       echo "================="
       curl --silent -o modules.tar.gz.aes ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
       openssl enc -base64 -aes-128-cbc -d -salt -in modules.tar.gz.aes -out modules.tar.gz -k $PASSWD
-      DECRYPT_EXIT_CODE=$?
     else
       curl --silent -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
     fi
     
-    if [[ $DECRYPT_EXIT_CODE -eq 0 && -f modules.tar.gz ]]; then
+
+    tar tf modules.tar.gz &> /dev/null
+    TEST_TAR=$?
+    if [[ $TEST_TAR -eq 0 ]]; then
       tar zxpf modules.tar.gz
       echo "================="
       echo "Unpacked modules:"
