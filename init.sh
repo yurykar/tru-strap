@@ -154,10 +154,21 @@ set_facter() {
 }
 
 install_ruby() {
-  ruby -v  > /dev/null 2>&1
-  if [[ $? -ne 0 ]] || [[ $(ruby -v | awk '{print $2}' | cut -d '.' -f 1) -lt 2 ]]; then
-    yum remove -y ruby-*
-    yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
+  majorversion=$(uname -r | awk -F- '{print $1}')
+   if [[ "$majorversion" == '2.6.32' ]]; then
+    echo 'Linux Major Version 6'
+     ruby -v  > /dev/null 2>&1
+     if [[ $? -ne 0 ]] || [[ $(ruby -v | awk '{print $2}' | cut -d '.' -f 1) -lt 2 ]]; then
+       yum remove -y ruby-*
+       yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
+     fi
+   elif [[ "$majorversion" == '3.10.0' ]]; then
+    echo 'Linux Major version 7'
+     ruby -v  > /dev/null 2>&1
+      if [[ $? -ne 0 ]] || [[ $(ruby -v | awk '{print $2}' | cut -d '.' -f 1) -lt 2 ]]; then
+        yum remove -y ruby-*
+        yum install -y ruby
+      fi
   fi
 }
 
@@ -321,7 +332,7 @@ fetch_puppet_modules() {
     else
       curl --silent -o modules.tar.gz ${FACTER_init_moduleshttpcache}/$MODULE_ARCH
     fi
-    
+
 
     tar tf modules.tar.gz &> /dev/null
     TEST_TAR=$?
