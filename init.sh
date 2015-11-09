@@ -155,9 +155,11 @@ set_facter() {
 }
 
 setup_rhel7_repo() {
+  yum install -y redhat-lsb-core
+  dist=$(lsb_release -is)
   majorversion=$(lsb_release -rs | cut -f1 -d.)
-  if [[ "$majorversion" == "7" ]]; then
-    echo "Linux Major version 7- adding extra repo for *-devel"
+  if [[ "$majorversion" == "7" ]] & [[ "$dist" == "RedHatEnterpriseServer" ]]; then
+    echo "RedHat Enterprise version 7- adding extra repo for *-devel"
     yum install -y yum-utils
     yum-config-manager --enable rhui-REGION-rhel-server-optional
     yum install -y ruby-devel
