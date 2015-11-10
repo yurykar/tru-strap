@@ -3,6 +3,7 @@
 
 main() {
     parse_args "$@"
+    setup_rhel7_repo
     install_yum_deps
     install_ruby
     set_gemsources "$@"
@@ -153,6 +154,18 @@ set_facter() {
   cat /etc/facter/facts.d/"${1}".txt
 }
 
+setup_rhel7_repo() {
+  yum_install redhat-lsb-core
+  dist=$(lsb_release -is)
+  majorversion=$(lsb_release -rs | cut -f1 -d.)
+  if [[ "$majorversion" == "7" ]] && [[ "$dist" == "RedHatEnterpriseServer" ]]; then
+    echo "RedHat Enterprise version 7- adding extra repo for *-devel"
+    yum_install yum-utils
+    yum-config-manager --enable rhui-REGION-rhel-server-optional
+    yum_install ruby-devel
+  fi
+
+}
 install_ruby() {
   majorversion=$(lsb_release -rs | cut -f1 -d.)
   if [[ "$majorversion" == "6" ]]; then
