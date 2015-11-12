@@ -234,7 +234,7 @@ install_yum_deps() {
 # Install the gem dependencies
 install_gem_deps() {
   echo "Installing required gems"
-  gem_install puppet:3.7.4 hiera facter ruby-augeas hiera-eyaml
+  gem_install puppet:3.7.4 hiera facter ruby-augeas hiera-eyaml ruby-shadow
 }
 
 # Inject the SSH key to allow git cloning
