@@ -366,8 +366,12 @@ run_puppet() {
   export LC_ALL=en_GB.utf8
   echo ""
   echo "Running puppet apply"
-  puppet apply /etc/puppet/manifests/site.pp
+  puppet apply /etc/puppet/manifests/site.pp --detailed-exitcodes
   PUPPET_EXIT=$?
+
+  if [ $PUPPET_EXIT == 2 ]; then
+    PUPPET_EXIT=0
+  fi
 
   echo ""
   echo "Top 10 slowest Puppet resources"
