@@ -159,9 +159,9 @@ setup_rhel7_repo() {
   dist=$(lsb_release -is)
   majorversion=$(lsb_release -rs | cut -f1 -d.)
   if [[ "$majorversion" == "7" ]] && [[ "$dist" == "RedHatEnterpriseServer" ]]; then
-      echo "RedHat Enterprise version 7- adding extra repo for *-devel"
-      yum_install yum-utils
-      yum-config-manager --enable rhui-REGION-rhel-server-optional
+    echo "RedHat Enterprise version 7- adding extra repo for *-devel"
+    yum_install yum-utils
+    yum-config-manager --enable rhui-REGION-rhel-server-optional
   fi
 
 }
