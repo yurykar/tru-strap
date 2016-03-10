@@ -162,7 +162,6 @@ setup_rhel7_repo() {
     echo "RedHat Enterprise version 7- adding extra repo for *-devel"
     yum_install yum-utils
     yum-config-manager --enable rhui-REGION-rhel-server-optional
-    yum_install ruby-devel
   fi
 
 }
@@ -177,7 +176,7 @@ install_ruby() {
    fi
   elif [[ "$majorversion" == "7" ]]; then
     echo "Linux Major version 7"
-    yum_install ruby
+    yum_install ruby ruby-devel
   fi
 }
 
