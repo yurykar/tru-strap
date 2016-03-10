@@ -162,7 +162,6 @@ setup_rhel7_repo() {
       echo "RedHat Enterprise version 7- adding extra repo for *-devel"
       yum_install yum-utils
       yum-config-manager --enable rhui-REGION-rhel-server-optional
-    fi
   fi
 
 }
