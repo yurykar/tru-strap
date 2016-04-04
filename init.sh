@@ -297,6 +297,8 @@ inject_eyaml_keys() {
 }
 
 run_librarian() {
+  echo -n "Installing activesupport:4.2.6"
+  gem install activesupport:4.2.6 --no-ri --no-rdoc
   echo -n "Installing librarian-puppet"
   gem install librarian-puppet --no-ri --no-rdoc
   echo -n "Installing Puppet modules"
