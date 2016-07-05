@@ -16,6 +16,12 @@ main() {
     run_puppet
 }
 
+function log_error() {
+    caller
+    echo "${1}"
+    exit 1
+}
+
 # Parse the commmand line arguments
 parse_args() {
   while [[ -n "${1}" ]] ; do
@@ -266,10 +272,21 @@ clone_git_repo() {
 symlink_puppet_dir() {
   # Link /etc/puppet to our private repo.
   PUPPET_DIR="${FACTER_init_repodir}/puppet"
-  rm -rf /etc/puppet > /dev/null 2>&1
-  rm /etc/hiera.yaml > /dev/null 2>&1
-  ln -s "${PUPPET_DIR}" /etc/puppet
-  ln -s /etc/puppet/hiera.yaml /etc/hiera.yaml
+  if ! rm -rf /etc/puppet > /dev/null 2>&1; then
+    log_error "Failed to remove /etc/puppet prior to symlinking ${PUPPET_DIR}"
+  fi
+
+  if ! ln -s "${PUPPET_DIR}" /etc/puppet; then
+    log_error "Failed to create symlink from /etc/puppet to ${PUPPET_DIR}"
+  fi
+
+  if ! rm /etc/hiera.yaml > /dev/null 2>&1; then
+    log_error "Failed to remove /etc/hiera.yaml"
+  fi
+
+  if ! ln -s /etc/puppet/hiera.yaml /etc/hiera.yaml; then
+    log_error "Failed to create symlink from /etc/hiera.yaml to /etc/puppet/hiera.yaml"
+  fi
 }
 
 # Inject the eyaml keys
