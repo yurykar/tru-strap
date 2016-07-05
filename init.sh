@@ -384,13 +384,27 @@ run_puppet() {
   export LC_ALL=en_GB.utf8
   echo ""
   echo "Running puppet apply"
-  puppet apply /etc/puppet/manifests/site.pp --detailed-exitcodes
-  PUPPET_EXIT=$?
+  PUPPET_EXIT=`puppet apply /etc/puppet/manifests/site.pp --detailed-exitcodes`
 
-  if [ $PUPPET_EXIT == 2 ]; then
-    PUPPET_EXIT=0
-  fi
-
+  case $PUPPET_EXIT in
+    0 )
+      echo "Puppet run succeeded with no changes or failures; the system was already in the desired state."
+      ;;
+    1 )
+      log_error "Puppet run failed"
+      ;;
+    2 )
+      PUPPET_EXIT=0
+      echo "Puppet run succeeded, and some resources were changed."
+      ;;
+    4 )
+      log_error "Puppet run succeeded, and some resources failed."
+      ;;
+    6 )
+      log_error "Puppet run succeeded, and included both changes and failures."
+      ;;
+  esac
+  
   echo ""
   echo "Top 10 slowest Puppet resources"
   echo "==============================="
