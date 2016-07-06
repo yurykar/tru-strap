@@ -26,70 +26,69 @@ function log_error() {
 parse_args() {
   while [[ -n "${1}" ]] ; do
     case "${1}" in
-    --help|-h)
-      print_help
-      exit
-      ;;
-    --version|-v)
-      print_version "${PROGNAME}" "${VERSION}"
-      exit
-      ;;
-    --role|-r)
-      set_facter init_role "${2}"
-      shift
-      ;;
-    --environment|-e)
-      set_facter init_env "${2}"
-      shift
-      ;;
-    --repouser|-u)
-      set_facter init_repouser "${2}"
-      shift
-      ;;
-    --reponame|-n)
-      set_facter init_reponame "${2}"
-      shift
-      ;;
-    --repoprivkeyfile|-k)
-      set_facter init_repoprivkeyfile "${2}"
-      shift
-      ;;
-    --repobranch|-b)
-      set_facter init_repobranch "${2}"
-      shift
-      ;;
-    --repodir|-d)
-      set_facter init_repodir "${2}"
-      shift
-      ;;
-    --eyamlpubkeyfile|-j)
-      set_facter init_eyamlpubkeyfile "${2}"
-      shift
-      ;;
-    --eyamlprivkeyfile|-m)
-      set_facter init_eyamlprivkeyfile "${2}"
-      shift
-      ;;
-    --moduleshttpcache|-c)
-      set_facter init_moduleshttpcache "${2}"
-      shift
-      ;;
-    --passwd|-p)
-      PASSWD="${2}"
-      shift
-      ;;
-    --gemsources)
-      shift
-      ;;
-    --debug)
-      shift
-      ;;
-
-    *)
-      echo "Unknown argument: ${1}"
-      print_help
-      exit
-      ;;
+      --help|-h)
+        print_help
+        exit
+        ;;
+      --version|-v)
+        print_version "${PROGNAME}" "${VERSION}"
+        exit
+        ;;
+      --role|-r)
+        set_facter init_role "${2}"
+        shift
+        ;;
+      --environment|-e)
+        set_facter init_env "${2}"
+        shift
+        ;;
+      --repouser|-u)
+        set_facter init_repouser "${2}"
+        shift
+        ;;
+      --reponame|-n)
+        set_facter init_reponame "${2}"
+        shift
+        ;;
+      --repoprivkeyfile|-k)
+        set_facter init_repoprivkeyfile "${2}"
+        shift
+        ;;
+      --repobranch|-b)
+        set_facter init_repobranch "${2}"
+        shift
+        ;;
+      --repodir|-d)
+        set_facter init_repodir "${2}"
+        shift
+        ;;
+      --eyamlpubkeyfile|-j)
+        set_facter init_eyamlpubkeyfile "${2}"
+        shift
+        ;;
+      --eyamlprivkeyfile|-m)
+        set_facter init_eyamlprivkeyfile "${2}"
+        shift
+        ;;
+      --moduleshttpcache|-c)
+        set_facter init_moduleshttpcache "${2}"
+        shift
+        ;;
+      --passwd|-p)
+        PASSWD="${2}"
+        shift
+        ;;
+      --gemsources)
+        shift
+        ;;
+      --debug)
+        shift
+        ;;
+      *)
+        echo "Unknown argument: ${1}"
+        print_help
+        exit
+        ;;
     esac
     shift
   done
@@ -190,7 +189,7 @@ install_ruby() {
 set_gemsources() {
   GEM_SOURCES=
   tmp_sources=false
-  for i in $@; do
+  for i in "$@"; do
     if [[ "${tmp_sources}" == "true" ]]; then
       GEM_SOURCES="${i}"
       break
@@ -388,7 +387,9 @@ run_puppet() {
   export LC_ALL=en_GB.utf8
   echo ""
   echo "Running puppet apply"
-  PUPPET_EXIT=`puppet apply /etc/puppet/manifests/site.pp --detailed-exitcodes`
+  puppet apply /etc/puppet/manifests/site.pp --detailed-exitcodes
+
+  PUPPET_EXIT=$?
 
   case $PUPPET_EXIT in
     0 )
@@ -398,7 +399,6 @@ run_puppet() {
       log_error "Puppet run failed"
       ;;
     2 )
-      PUPPET_EXIT=0
       echo "Puppet run succeeded, and some resources were changed."
       ;;
     4 )
@@ -406,6 +406,9 @@ run_puppet() {
       ;;
     6 )
       log_error "Puppet run succeeded, and included both changes and failures."
+      ;;
+    * )
+      log_error "Puppet run returned unexpected exit code."
       ;;
   esac
 
@@ -418,7 +421,7 @@ run_puppet() {
     echo "$(grep -B 3 "$i" /var/lib/puppet/reports/*/*.yaml | head -1 | awk '{print $2 $3}' )"
   done | tac
 
-  exit $PUPPET_EXIT
+  exit 0
 }
 
 main "$@"
