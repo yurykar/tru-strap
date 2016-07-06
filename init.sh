@@ -272,16 +272,20 @@ clone_git_repo() {
 symlink_puppet_dir() {
   # Link /etc/puppet to our private repo.
   PUPPET_DIR="${FACTER_init_repodir}/puppet"
-  if ! rm -rf /etc/puppet > /dev/null 2>&1; then
-    log_error "Failed to remove /etc/puppet prior to symlinking ${PUPPET_DIR}"
+  if [ -e /etc/puppet ]; then
+    if ! rm -rf /etc/puppet > /dev/null 2>&1; then
+      log_error "Failed to remove /etc/puppet prior to symlinking ${PUPPET_DIR}"
+    fi
   fi
 
   if ! ln -s "${PUPPET_DIR}" /etc/puppet; then
     log_error "Failed to create symlink from /etc/puppet to ${PUPPET_DIR}"
   fi
 
-  if ! rm /etc/hiera.yaml > /dev/null 2>&1; then
-    log_error "Failed to remove /etc/hiera.yaml"
+  if [ -e /etc/hiera.yaml ]; then
+    if ! rm /etc/hiera.yaml > /dev/null 2>&1; then
+      log_error "Failed to remove /etc/hiera.yaml"
+    fi
   fi
 
   if ! ln -s /etc/puppet/hiera.yaml /etc/hiera.yaml; then
@@ -404,7 +408,7 @@ run_puppet() {
       log_error "Puppet run succeeded, and included both changes and failures."
       ;;
   esac
-  
+
   echo ""
   echo "Top 10 slowest Puppet resources"
   echo "==============================="
