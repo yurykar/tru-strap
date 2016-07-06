@@ -108,20 +108,14 @@ parse_args() {
 
 # Install yum packages if they're not already installed
 yum_install() {
-  PACKAGE_LIST=""
   for i in "$@"
   do
-    yum --noplugins list installed "${i}" > /dev/null 2>&1
-    if [[ $? == 0 ]]; then
-      echo "${i} is already installed"
-    else
-      PACKAGE_LIST="${PACKAGE_LIST} ${i}"
+    if ! rpm -q ${i} > /dev/null 2>&1; then
+      if ! yum install -y ${i}; then
+        log_error "Failed to install yum package: ${i}"
+      fi
     fi
   done
-
-  if [[ -n "${PACKAGE_LIST}" ]]; then
-    yum install -y $(echo "${PACKAGE_LIST}" | xargs)
-  fi
 }
 
 # Install Ruby gems if they're not already installed
