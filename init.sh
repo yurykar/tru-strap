@@ -210,6 +210,7 @@ install_ruby() {
    fi
   elif [[ "$majorversion" == "7" ]]; then
     echo "Linux Major version 7"
+    yum remove -y ruby-* || log_error "Failed to remove old ruby"
     yum_install ruby ruby-devel
   fi
 }
