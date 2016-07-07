@@ -107,7 +107,6 @@ parse_args() {
     shift
   done
 
-
   # Define required parameters.
   if [[ -z "${FACTER_init_role}" || \
         -z "${FACTER_init_env}"  || \
@@ -186,6 +185,7 @@ setup_rhel7_repo() {
   fi
 
 }
+
 install_ruby() {
   majorversion=$(lsb_release -rs | cut -f1 -d.)
   if [[ "$majorversion" == "6" ]]; then
@@ -193,7 +193,7 @@ install_ruby() {
    ruby -v  > /dev/null 2>&1
    if [[ $? -ne 0 ]] || [[ $(ruby -v | awk '{print $2}' | cut -d '.' -f 1) -lt 2 ]]; then
      yum remove -y ruby-*
-     yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
+     yum_install https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
    fi
   elif [[ "$majorversion" == "7" ]]; then
     echo "Linux Major version 7"
