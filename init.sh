@@ -136,7 +136,7 @@ yum_install() {
 
 # Install Ruby gems if they're not already installed
 gem_install() {
-  RESULT=''
+  local RESULT=''
   for i in "$@"
   do
     if [[ ${i} =~ ^.*:.*$ ]];then
@@ -338,10 +338,10 @@ run_librarian() {
   gem_install activesupport:4.2.6
   echo -n "Installing librarian-puppet"
   gem_install librarian-puppet
-  echo -n "Installing Puppet modules"
-  RESULT=''
-  if ! "librarian-puppet install --verbose | tee $RESULT"; then
-    log_error "librarian-uppet failed: $RESULT"
+  echo -n "Running librarian-puppet"
+  local RESULT=''
+  if ! "librarian-puppet install --verbose |tee ${RESULT}"; then
+    log_error "librarian-puppet failed: ${RESULT}"
   fi
   librarian-puppet show
 }
