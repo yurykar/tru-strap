@@ -127,9 +127,7 @@ yum_install() {
   for i in "$@"
   do
     if ! rpm -q ${i} > /dev/null 2>&1; then
-      if ! yum install -y ${i}; then
-        log_error "Failed to install yum package: ${i}"
-      fi
+      yum install -y ${i} || log_error "Failed to install yum package: ${i}"
     fi
   done
 }
@@ -167,11 +165,13 @@ print_version() {
 set_facter() {
   export FACTER_$1="${2}"
   if [[ ! -d /etc/facter ]]; then
-    mkdir -p /etc/facter/facts.d
+    mkdir -p /etc/facter/facts.d || log_error "Failed to create /etc/facter/facts.d"
   fi
-  echo "${1}=${2}" > /etc/facter/facts.d/"${1}".txt
-  chmod -R 600 /etc/facter
-  cat /etc/facter/facts.d/"${1}".txt
+  if ! echo "${1}=${2}" > /etc/facter/facts.d/"${1}".txt; then
+    log_error "Failed to create /etc/facter/facts.d/${1}.txt"
+  fi
+  chmod -R 600 /etc/facter || log_error "Failed to set permissions on /etc/facter"
+  cat /etc/facter/facts.d/"${1}".txt || log_error "Failed to create ${1}.txt"
 }
 
 setup_rhel7_repo() {
@@ -181,7 +181,7 @@ setup_rhel7_repo() {
   if [[ "$majorversion" == "7" ]] && [[ "$dist" == "RedHatEnterpriseServer" ]]; then
     echo "RedHat Enterprise version 7- adding extra repo for *-devel"
     yum_install yum-utils
-    yum-config-manager --enable rhui-REGION-rhel-server-optional
+    yum-config-manager --enable rhui-REGION-rhel-server-optional || log_error "Failed to run yum-config-manager"
   fi
 
 }
@@ -192,7 +192,7 @@ install_ruby() {
   echo "Linux Major Version 6"
    ruby -v  > /dev/null 2>&1
    if [[ $? -ne 0 ]] || [[ $(ruby -v | awk '{print $2}' | cut -d '.' -f 1) -lt 2 ]]; then
-     yum remove -y ruby-*
+     yum remove -y ruby-* || log_error "Failed to remove old ruby"
      yum_install https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
    fi
   elif [[ "$majorversion" == "7" ]]; then
@@ -221,7 +221,7 @@ set_gemsources() {
     # Remove the old sources
     OLD_GEM_SOURCES=$(gem sources --list | tail -n+3 | tr '\n' ' ')
     for i in $OLD_GEM_SOURCES; do
-      gem sources -r "$i"
+      gem sources -r "$i" || log_error "Failed to remove gem source ${i}"
     done
 
     # Add the replacement sources
@@ -231,7 +231,7 @@ set_gemsources() {
       export attempts=1
       exit_code=1
       while [[ $exit_code -ne 0 ]] && [[ $attempts -le ${MAX_RETRIES} ]]; do
-        gem sources -a $i
+        gem sources -a $i || echo "Failed to add gem source ${i}"
         exit_code=$?
         if [[ $exit_code -ne 0 ]]; then
           sleep_time=$((attempts * 10))
@@ -263,12 +263,12 @@ inject_ssh_key() {
   echo "Injecting private ssh key"
   GITHUB_PRI_KEY=$(cat "${FACTER_init_repoprivkeyfile}")
   if [[ ! -d /root/.ssh ]]; then
-    mkdir /root/.ssh
-    chmod 600 /root/.ssh
+    mkdir /root/.ssh || log_error "Failed to create /root/.ssh"
+    chmod 600 /root/.ssh || log_error "Failed to change permissions on /root/.ssh"
   fi
-  echo "${GITHUB_PRI_KEY}" > /root/.ssh/id_rsa
-  echo "StrictHostKeyChecking=no" > /root/.ssh/config
-  chmod -R 600 /root/.ssh
+  echo "${GITHUB_PRI_KEY}" > /root/.ssh/id_rsa || log_error "Failed to set ssh private key"
+  echo "StrictHostKeyChecking=no" > /root/.ssh/config ||log_error "Failed to set ssh config"
+  chmod -R 600 /root/.ssh || log_error "Failed to set permissions on /root/.ssh"
 }
 
 # Clone the git repo
@@ -276,10 +276,10 @@ clone_git_repo() {
   # Clone private repo.
   echo "Cloning ${FACTER_init_repouser}/${FACTER_init_reponame} repo"
   rm -rf "${FACTER_init_repodir}"
-  git clone -b "${FACTER_init_repobranch}" git@github.com:"${FACTER_init_repouser}"/"${FACTER_init_reponame}".git "${FACTER_init_repodir}"
   # Exit if the clone fails
-  if [[ ! -d "${FACTER_init_repodir}" ]]; then
-    echo "Failed to clone git@github.com:${FACTER_init_repouser}/${FACTER_init_reponame}.git" && exit 1
+  if ! git clone -b "${FACTER_init_repobranch}" git@github.com:"${FACTER_init_repouser}"/"${FACTER_init_reponame}".git "${FACTER_init_repodir}";
+  then
+    log_error "Failed to clone git@github.com:${FACTER_init_repouser}/${FACTER_init_reponame}.git"
   fi
 }
 
@@ -313,10 +313,10 @@ inject_eyaml_keys() {
   # If no eyaml keys have been provided, create some
   if [[ -z "${FACTER_init_eyamlpubkeyfile}" ]] && [[ -z "${FACTER_init_eyamlprivkeyfile}" ]] && [[ ! -d "/etc/puppet/secure/keys" ]]; then
     if [[ ! -d /etc/puppet/secure/keys ]]; then
-      mkdir -p /etc/puppet/secure/keys
-      chmod -R 500 /etc/puppet/secure
+      mkdir -p /etc/puppet/secure/keys || log_error "Failed to create /etc/puppet/secure/keys"
+      chmod -R 500 /etc/puppet/secure || log_error "Failed to change permissions on /etc/puppet/secure"
     fi
-    cd /etc/puppet/secure || exit
+    cd /etc/puppet/secure || exit 1
     echo -n "Creating eyaml key pair"
     eyaml createkeys
   else
