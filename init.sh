@@ -339,9 +339,8 @@ run_librarian() {
   echo -n "Installing librarian-puppet"
   gem_install librarian-puppet
   echo -n "Running librarian-puppet"
-  local RESULT=''
-  if ! "librarian-puppet install --verbose |tee ${RESULT}"; then
-    log_error "librarian-puppet failed: ${RESULT}"
+  if ! librarian-puppet install --verbose; then
+    log_error "librarian-puppet failed"
   fi
   librarian-puppet show
 }
