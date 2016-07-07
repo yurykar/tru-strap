@@ -16,6 +16,20 @@ main() {
     run_puppet
 }
 
+usagemessage="Error, USAGE: $(basename "${0}") \n \
+  --role|-r \n \
+  --environment|-e \n \
+  --repouser|-u \n \
+  --reponame|-n \n \
+  --repoprivkeyfile|-k \n \
+  [--repobranch|-b] \n \
+  [--repodir|-d] \n \
+  [--eyamlpubkeyfile|-j] \n \
+  [--eyamlprivkeyfile|-m] \n \
+  [--gemsources|-s] \n \
+  [--help|-h] \n \
+  [--version|-v]"
+
 function log_error() {
     caller
     echo "${1}"
@@ -27,7 +41,7 @@ parse_args() {
   while [[ -n "${1}" ]] ; do
     case "${1}" in
       --help|-h)
-        print_help
+        echo -e ${usagemessage}
         exit
         ;;
       --version|-v)
@@ -86,26 +100,13 @@ parse_args() {
         ;;
       *)
         echo "Unknown argument: ${1}"
-        print_help
+        echo -e "${usagemessage}"
         exit
         ;;
     esac
     shift
   done
 
-  usagemessage="Error, USAGE: $(basename "${0}") \n \
-      --role|-r \n \
-      --environment|-e \n \
-      --repouser|-u \n \
-      --reponame|-n \n \
-      --repoprivkeyfile|-k \n \
-      [--repobranch|-b] \n \
-      [--repodir|-d] \n \
-      [--eyamlpubkeyfile|-j] \n \
-      [--eyamlprivkeyfile|-m] \n \
-      [--gemsources|-s] \n \
-      [--help|-h] \n \
-      [--version|-v]"
 
   # Define required parameters.
   if [[ -z "${FACTER_init_role}" || \
@@ -161,10 +162,6 @@ gem_install() {
 
 print_version() {
   echo "${1}" "${2}"
-}
-
-print_help() {
-  echo Heeelp.
 }
 
 # Set custom facter facts
