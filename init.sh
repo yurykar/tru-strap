@@ -143,12 +143,14 @@ gem_install() {
       MODULE=$(echo ${i} | cut -d ':' -f 1)
       VERSION=$(echo ${i} | cut -d ':' -f 2)
       if ! gem list -i --local ${MODULE} --version ${VERSION} > /dev/null 2>&1; then
+        echo "Installing ${i}"
         if ! gem install ${i} --no-ri --no-rdoc |tee ${RESULT}; then
           log_error "Failed to install gem: ${i}: ${RESULT}"
         fi
       fi
     else
       if ! gem list -i --local ${i} > /dev/null 2>&1; then
+        echo "Installing ${i}"
         if ! gem install ${i} --no-ri --no-rdoc |tee ${RESULT}; then
           log_error "Failed to install gem: ${i}: ${RESULT}"
         fi
@@ -254,7 +256,7 @@ install_yum_deps() {
 
 # Install the gem dependencies
 install_gem_deps() {
-  echo "Installing required gems"
+  echo "Installing puppet and related gems"
   gem_install puppet:3.7.4 hiera facter ruby-augeas hiera-eyaml ruby-shadow
 }
 
@@ -334,10 +336,7 @@ inject_eyaml_keys() {
 }
 
 run_librarian() {
-  echo -n "Installing activesupport:4.2.6"
-  gem_install activesupport:4.2.6
-  echo -n "Installing librarian-puppet"
-  gem_install librarian-puppet
+  gem_install activesupport:4.2.6 librarian-puppet
   echo -n "Running librarian-puppet"
   if ! librarian-puppet install --verbose; then
     log_error "librarian-puppet failed"
