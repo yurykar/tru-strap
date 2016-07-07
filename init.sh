@@ -430,14 +430,15 @@ run_puppet() {
       ;;
   esac
 
-  echo ""
-  echo "Top 10 slowest Puppet resources"
-  echo "==============================="
-  PERFORMANCE_DATA=( $(grep evaluation_time /var/lib/puppet/reports/*/*.yaml | awk '{print $3}' | sort -n | tail -10 ) )
+  #Find the newest puppet log
+  local PUPPET_LOG=( $(find /var/lib/puppet/reports -type f | xargs ls -ltr | tail -n 1 | awk '{print $9}') )
+  PERFORMANCE_DATA=( $(grep evaluation_time ${PUPPET_LOG} | awk '{print $2}' | sort -n | tail -10 ) )
+  echo "===============-Top 10 slowest Puppet resources-==============="
   for i in ${PERFORMANCE_DATA[*]}; do
     echo -n "${i}s - "
     echo "$(grep -B 3 "$i" /var/lib/puppet/reports/*/*.yaml | head -1 | awk '{print $2 $3}' )"
   done | tac
+  echo "===============-Top 10 slowest Puppet resources-==============="
 }
 
 main "$@"
