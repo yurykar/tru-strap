@@ -93,11 +93,27 @@ parse_args() {
     shift
   done
 
-  usagemessage="Error, USAGE: $(basename "${0}") --role|-r --environment|-e --repouser|-u --reponame|-n --repoprivkeyfile|-k [--repobranch|-b] [--repodir|-d] [--eyamlpubkeyfile|-j] [--eyamlprivkeyfile|-m] [--gemsources|-s] [--help|-h] [--version|-v]"
+  usagemessage="Error, USAGE: $(basename "${0}") \n \
+      --role|-r \n \
+      --environment|-e \n \
+      --repouser|-u \n \
+      --reponame|-n \n \
+      --repoprivkeyfile|-k \n \
+      [--repobranch|-b] \n \
+      [--repodir|-d] \n \
+      [--eyamlpubkeyfile|-j] \n \
+      [--eyamlprivkeyfile|-m] \n \
+      [--gemsources|-s] \n \
+      [--help|-h] \n \
+      [--version|-v]"
 
   # Define required parameters.
-  if [[ -z "${FACTER_init_role}" || -z "${FACTER_init_env}" || -z "${FACTER_init_repouser}" || -z "${FACTER_init_reponame}" || -z "${FACTER_init_repoprivkeyfile}" ]]; then
-    echo "${usagemessage}"
+  if [[ -z "${FACTER_init_role}" || \
+        -z "${FACTER_init_env}"  || \
+        -z "${FACTER_init_repouser}" || \
+        -z "${FACTER_init_reponame}" || \
+        -z "${FACTER_init_repoprivkeyfile}" ]]; then
+    echo -e "${usagemessage}"
     exit 1
   fi
 
@@ -120,18 +136,25 @@ yum_install() {
 
 # Install Ruby gems if they're not already installed
 gem_install() {
+  RESULT=''
   for i in "$@"
   do
-    gem list --local $(echo "${i}" | cut -d ':' -f 1)  | grep $(echo "${i}" | cut -d ':' -f 1) > /dev/null 2>&1
-    if [[ $? == 0 ]]; then
-      echo "${i} is already installed"
+    if [[ ${i} =~ ^.*:.*$ ]];then
+      MODULE=$(echo ${i} | cut -d ':' -f 1)
+      VERSION=$(echo ${i} | cut -d ':' -f 2)
+      if ! gem list -i --local ${MODULE} --version ${VERSION} > /dev/null 2>&1; then
+        if ! gem install ${i} --no-ri --no-rdoc |tee ${RESULT}; then
+          log_error "Failed to install gem: ${i}: ${RESULT}"
+        fi
+      fi
     else
-      GEM_LIST="${GEM_LIST} ${i}"
+      if ! gem list -i --local ${i} > /dev/null 2>&1; then
+        if ! gem install ${i} --no-ri --no-rdoc |tee ${RESULT}; then
+          log_error "Failed to install gem: ${i}: ${RESULT}"
+        fi
+      fi
     fi
   done
-  if [[ -n "$GEM_LIST" ]]; then
-    gem install $(echo "$GEM_LIST" | xargs) --no-ri --no-rdoc
-  fi
 }
 
 print_version() {
@@ -312,11 +335,14 @@ inject_eyaml_keys() {
 
 run_librarian() {
   echo -n "Installing activesupport:4.2.6"
-  gem install activesupport:4.2.6 --no-ri --no-rdoc
+  gem_install activesupport:4.2.6
   echo -n "Installing librarian-puppet"
-  gem install librarian-puppet --no-ri --no-rdoc
+  gem_install librarian-puppet
   echo -n "Installing Puppet modules"
-  librarian-puppet install --verbose
+  RESULT=''
+  if ! "librarian-puppet install --verbose | tee $RESULT"; then
+    log_error "librarian-uppet failed: $RESULT"
+  fi
   librarian-puppet show
 }
 
