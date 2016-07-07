@@ -230,8 +230,11 @@ set_gemsources() {
       MAX_RETRIES=5
       export attempts=1
       exit_code=1
-      while [[ $exit_code -ne 0 ]] && [[ $attempts -le ${MAX_RETRIES} ]]; do
-        gem sources -a $i || echo "Failed to add gem source ${i}"
+      while [[ $exit_code -ne 0 ]]; do
+        if [[ $attempts -gt ${MAX_RETRIES} ]]; then
+          log_error "Failed to update gem sources after ${attempts} retries"
+        fi
+        gem sources -a $i
         exit_code=$?
         if [[ $exit_code -ne 0 ]]; then
           sleep_time=$((attempts * 10))
