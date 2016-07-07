@@ -412,16 +412,16 @@ run_puppet() {
 
   case $PUPPET_EXIT in
     0 )
-      echo "Puppet run succeeded with no changes or failures; the system was already in the desired state."
+      echo "Puppet run succeeded with no failures."
       ;;
     1 )
-      log_error "Puppet run failed"
+      log_error "Puppet run failed."
       ;;
     2 )
       echo "Puppet run succeeded, and some resources were changed."
       ;;
     4 )
-      log_error "Puppet run succeeded, and some resources failed."
+      log_error "Puppet run succeeded, but some resources failed."
       ;;
     6 )
       log_error "Puppet run succeeded, and included both changes and failures."
@@ -439,8 +439,6 @@ run_puppet() {
     echo -n "${i}s - "
     echo "$(grep -B 3 "$i" /var/lib/puppet/reports/*/*.yaml | head -1 | awk '{print $2 $3}' )"
   done | tac
-
-  exit 0
 }
 
 main "$@"
