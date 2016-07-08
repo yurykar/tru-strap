@@ -148,15 +148,17 @@ gem_install() {
       VERSION=$(echo ${i} | cut -d ':' -f 2)
       if ! gem list -i --local ${MODULE} --version ${VERSION} > /dev/null 2>&1; then
         echo "Installing ${i}"
-        if ! gem install ${i} --no-ri --no-rdoc |tee ${RESULT}; then
-          log_error "Failed to install gem: ${i}: ${RESULT}"
+        RESULT=$(gem install ${i} --no-ri --no-rdoc)
+        if [[ $? != 0 ]]; then
+          log_error "Failed to install gem: ${i}\ngem returned:\n${RESULT}"
         fi
       fi
     else
       if ! gem list -i --local ${i} > /dev/null 2>&1; then
         echo "Installing ${i}"
-        if ! gem install ${i} --no-ri --no-rdoc |tee ${RESULT}; then
-          log_error "Failed to install gem: ${i}: ${RESULT}"
+        RESULT=$(gem install ${i} --no-ri --no-rdoc)
+        if [[ $? != 0 ]]; then
+          log_error "Failed to install gem: ${i}\ngem returned:\n${RESULT}"
         fi
       fi
     fi
@@ -246,12 +248,12 @@ set_gemsources() {
           sleep ${sleep_time}s
           attempts=$((attempts + 1))
         else
-          NO_SUCCESS=1
+          NO_SUCCESS=0
         fi
       done
     done
     IFS=$OIFS
-    if [[ $NO_SUCCESS ]]; then
+    if [[ $NO_SUCCESS == 1 ]]; then
       log_error "All gem sources failed to add"
     fi
   fi
