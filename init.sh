@@ -319,7 +319,7 @@ inject_eyaml_keys() {
       mkdir -p /etc/puppet/secure/keys || log_error "Failed to create /etc/puppet/secure/keys"
       chmod -R 500 /etc/puppet/secure || log_error "Failed to change permissions on /etc/puppet/secure"
     fi
-    cd /etc/puppet/secure || exit 1
+    cd /etc/puppet/secure || log_error "Failed to cd to /etc/puppet/secure"
     echo -n "Creating eyaml key pair"
     eyaml createkeys
   else
@@ -431,8 +431,9 @@ run_puppet() {
   esac
 
   #Find the newest puppet log
-  local PUPPET_LOG=( $(find /var/lib/puppet/reports -type f | xargs ls -ltr | tail -n 1 | awk '{print $9}') )
-  PERFORMANCE_DATA=( $(grep evaluation_time ${PUPPET_LOG} | awk '{print $2}' | sort -n | tail -10 ) )
+  local PUPPET_LOG=''
+  PUPPET_LOG=$(find /var/lib/puppet/reports -type f -print0 | xargs ls -ltr | tail -n 1 | awk '{print $9}')
+  PERFORMANCE_DATA=( $(grep evaluation_time "${PUPPET_LOG}" | awk '{print $2}' | sort -n | tail -10 ) )
   echo "===============-Top 10 slowest Puppet resources-==============="
   for i in ${PERFORMANCE_DATA[*]}; do
     echo -n "${i}s - "
