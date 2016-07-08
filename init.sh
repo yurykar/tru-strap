@@ -127,7 +127,13 @@ yum_install() {
   for i in "$@"
   do
     if ! rpm -q ${i} > /dev/null 2>&1; then
-      yum install -y ${i} || log_error "Failed to install yum package: ${i}"
+      local RESULT=''
+      RESULT=$(yum install -y ${i} 2>&1)
+      if [[ $? != 0 ]]; then
+        log_error "Failed to install yum package: ${i}\nyum returned:\n${RESULT}"
+      else
+        echo "Installed yum package: ${i}"
+      fi
     fi
   done
 }
