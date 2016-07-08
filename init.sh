@@ -32,7 +32,7 @@ usagemessage="Error, USAGE: $(basename "${0}") \n \
 
 function log_error() {
     caller
-    echo "${1}"
+    printf "%s\n" "${1}"
     exit 1
 }
 
@@ -231,15 +231,13 @@ set_gemsources() {
     done
 
     # Add the replacement sources
+    local NO_SUCCESS=1
     OIFS=$IFS && IFS=','
     for i in $GEM_SOURCES; do
       MAX_RETRIES=5
       export attempts=1
       exit_code=1
-      while [[ $exit_code -ne 0 ]]; do
-        if [[ $attempts -gt ${MAX_RETRIES} ]]; then
-          log_error "Failed to update gem sources after ${attempts} retries"
-        fi
+      while [[ $exit_code -ne 0 ]] && [[ $attempts -le ${MAX_RETRIES} ]]; do
         gem sources -a $i
         exit_code=$?
         if [[ $exit_code -ne 0 ]]; then
@@ -247,10 +245,15 @@ set_gemsources() {
           echo Sleeping for ${sleep_time}s before retrying ${attempts}/${MAX_RETRIES}
           sleep ${sleep_time}s
           attempts=$((attempts + 1))
+        else
+          NO_SUCCESS=1
         fi
       done
     done
     IFS=$OIFS
+    if [[ $NO_SUCCESS ]]; then
+      log_error "All gem sources failed to add"
+    fi
   fi
 }
 
