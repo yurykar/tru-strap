@@ -101,7 +101,7 @@ parse_args() {
       *)
         echo "Unknown argument: ${1}"
         echo -e "${usagemessage}"
-        exit
+        exit 1
         ;;
     esac
     shift
