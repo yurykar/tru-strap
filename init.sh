@@ -354,8 +354,10 @@ inject_eyaml_keys() {
 run_librarian() {
   gem_install activesupport:4.2.6 librarian-puppet
   echo -n "Running librarian-puppet"
-  if ! librarian-puppet install --verbose; then
-    log_error "librarian-puppet failed"
+  local RESULT=''
+  RESULT=$(librarian-puppet install --verbose)
+  if [[ $? != 0 ]]; then
+    log_error "librarian-puppet failed.\nThe full output was:\n${RESULT}"
   fi
   librarian-puppet show
 }
