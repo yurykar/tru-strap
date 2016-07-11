@@ -299,26 +299,31 @@ clone_git_repo() {
 
 # Symlink the cloned git repo to the usual location for Puppet to run
 symlink_puppet_dir() {
+  local RESULT=''
   # Link /etc/puppet to our private repo.
   PUPPET_DIR="${FACTER_init_repodir}/puppet"
   if [ -e /etc/puppet ]; then
-    if ! rm -rf /etc/puppet > /dev/null 2>&1; then
-      log_error "Failed to remove /etc/puppet prior to symlinking ${PUPPET_DIR}"
+    RESULT=$(rm -rf /etc/puppet);
+    if [[ $? != 0 ]]; then
+      log_error "Failed to remove /etc/puppet\nrm returned:\n${RESULT}"
     fi
   fi
 
-  if ! ln -s "${PUPPET_DIR}" /etc/puppet; then
-    log_error "Failed to create symlink from /etc/puppet to ${PUPPET_DIR}"
+  RESULT=$(ln -s "${PUPPET_DIR}" /etc/puppet)
+  if [[ $? != 0 ]]; then
+    log_error "Failed to create symlink from ${PUPPET_DIR}\nln returned:\n${RESULT}"
   fi
 
   if [ -e /etc/hiera.yaml ]; then
-    if ! rm /etc/hiera.yaml > /dev/null 2>&1; then
-      log_error "Failed to remove /etc/hiera.yaml"
+    RESULT=$(rm -f /etc/hiera.yaml)
+    if [[ $? != 0 ]]; then
+      log_error "Failed to remove /etc/hiera.yaml\nrm returned:\n${RESULT}"
     fi
   fi
 
-  if ! ln -s /etc/puppet/hiera.yaml /etc/hiera.yaml; then
-    log_error "Failed to create symlink from /etc/hiera.yaml to /etc/puppet/hiera.yaml"
+  RESULT=$(ln -s /etc/puppet/hiera.yaml /etc/hiera.yaml)
+  if [[ $? != 0 ]]; then
+    log_error "Failed to create symlink from /etc/hiera.yaml\nln returned:\n${RESULT}"
   fi
 }
 
