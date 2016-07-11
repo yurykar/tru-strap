@@ -31,6 +31,7 @@ usagemessage="Error, USAGE: $(basename "${0}") \n \
   [--version|-v]"
 
 function log_error() {
+    echo "###############------Fatal error!------###############"
     caller
     printf "%s\n" "${1}"
     exit 1
