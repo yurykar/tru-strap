@@ -172,15 +172,17 @@ print_version() {
 
 # Set custom facter facts
 set_facter() {
-  export FACTER_$1="${2}"
+  local key=FACTER_${1}
+  local value=${2}
+  export ${key}="${value}"
   if [[ ! -d /etc/facter ]]; then
     mkdir -p /etc/facter/facts.d || log_error "Failed to create /etc/facter/facts.d"
   fi
-  if ! echo "${1}=${2}" > /etc/facter/facts.d/"${1}".txt; then
-    log_error "Failed to create /etc/facter/facts.d/${1}.txt"
+  if ! echo "${key}=${value}" > /etc/facter/facts.d/"${key}".txt; then
+    log_error "Failed to create /etc/facter/facts.d/${key}.txt"
   fi
   chmod -R 600 /etc/facter || log_error "Failed to set permissions on /etc/facter"
-  cat /etc/facter/facts.d/"${1}".txt || log_error "Failed to create ${1}.txt"
+  cat /etc/facter/facts.d/"${key}".txt || log_error "Failed to create ${key}.txt"
 }
 
 setup_rhel7_repo() {
