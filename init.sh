@@ -172,9 +172,11 @@ print_version() {
 
 # Set custom facter facts
 set_facter() {
-  local key=FACTER_${1}
+  local key=${1}
+  #Note: The name of the evironment variable is not the same as the facter fact.
+  local export_key=FACTER_${key}
   local value=${2}
-  export ${key}="${value}"
+  export ${export_key}="${value}"
   if [[ ! -d /etc/facter ]]; then
     mkdir -p /etc/facter/facts.d || log_error "Failed to create /etc/facter/facts.d"
   fi
