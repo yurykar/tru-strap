@@ -390,7 +390,7 @@ fetch_puppet_modules() {
     MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz
   fi
 
-  cd "${PUPPET_DIR}" || exit
+  cd "${PUPPET_DIR}" || log_error "Failed to cd to ${PUPPET_DIR}"
 
   if [[ ! -z "${FACTER_init_moduleshttpcache}" && "200" == $(curl "${FACTER_init_moduleshttpcache}"/"${MODULE_ARCH}"  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
     echo -n "Downloading pre-packed Puppet modules from cache..."
