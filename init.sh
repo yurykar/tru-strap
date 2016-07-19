@@ -16,83 +16,105 @@ main() {
     run_puppet
 }
 
+usagemessage="Error, USAGE: $(basename "${0}") \n \
+  --role|-r \n \
+  --environment|-e \n \
+  --repouser|-u \n \
+  --reponame|-n \n \
+  --repoprivkeyfile|-k \n \
+  [--repobranch|-b] \n \
+  [--repodir|-d] \n \
+  [--eyamlpubkeyfile|-j] \n \
+  [--eyamlprivkeyfile|-m] \n \
+  [--gemsources|-s] \n \
+  [--help|-h] \n \
+  [--version|-v]"
+
+function log_error() {
+    echo "###############------Fatal error!------###############"
+    caller
+    printf "%s\n" "${1}"
+    exit 1
+}
+
 # Parse the commmand line arguments
 parse_args() {
   while [[ -n "${1}" ]] ; do
     case "${1}" in
-    --help|-h)
-      print_help
-      exit
-      ;;
-    --version|-v)
-      print_version "${PROGNAME}" "${VERSION}"
-      exit
-      ;;
-    --role|-r)
-      set_facter init_role "${2}"
-      shift
-      ;;
-    --environment|-e)
-      set_facter init_env "${2}"
-      shift
-      ;;
-    --repouser|-u)
-      set_facter init_repouser "${2}"
-      shift
-      ;;
-    --reponame|-n)
-      set_facter init_reponame "${2}"
-      shift
-      ;;
-    --repoprivkeyfile|-k)
-      set_facter init_repoprivkeyfile "${2}"
-      shift
-      ;;
-    --repobranch|-b)
-      set_facter init_repobranch "${2}"
-      shift
-      ;;
-    --repodir|-d)
-      set_facter init_repodir "${2}"
-      shift
-      ;;
-    --eyamlpubkeyfile|-j)
-      set_facter init_eyamlpubkeyfile "${2}"
-      shift
-      ;;
-    --eyamlprivkeyfile|-m)
-      set_facter init_eyamlprivkeyfile "${2}"
-      shift
-      ;;
-    --moduleshttpcache|-c)
-      set_facter init_moduleshttpcache "${2}"
-      shift
-      ;;
-    --passwd|-p)
-      PASSWD="${2}"
-      shift
-      ;;
-    --gemsources)
-      shift
-      ;;
-    --debug)
-      shift
-      ;;
-
-    *)
-      echo "Unknown argument: ${1}"
-      print_help
-      exit
-      ;;
+      --help|-h)
+        echo -e ${usagemessage}
+        exit
+        ;;
+      --version|-v)
+        print_version "${PROGNAME}" "${VERSION}"
+        exit
+        ;;
+      --role|-r)
+        set_facter init_role "${2}"
+        shift
+        ;;
+      --environment|-e)
+        set_facter init_env "${2}"
+        shift
+        ;;
+      --repouser|-u)
+        set_facter init_repouser "${2}"
+        shift
+        ;;
+      --reponame|-n)
+        set_facter init_reponame "${2}"
+        shift
+        ;;
+      --repoprivkeyfile|-k)
+        set_facter init_repoprivkeyfile "${2}"
+        shift
+        ;;
+      --repobranch|-b)
+        set_facter init_repobranch "${2}"
+        shift
+        ;;
+      --repodir|-d)
+        set_facter init_repodir "${2}"
+        shift
+        ;;
+      --eyamlpubkeyfile|-j)
+        set_facter init_eyamlpubkeyfile "${2}"
+        shift
+        ;;
+      --eyamlprivkeyfile|-m)
+        set_facter init_eyamlprivkeyfile "${2}"
+        shift
+        ;;
+      --moduleshttpcache|-c)
+        set_facter init_moduleshttpcache "${2}"
+        shift
+        ;;
+      --passwd|-p)
+        PASSWD="${2}"
+        shift
+        ;;
+      --gemsources)
+        shift
+        ;;
+      --debug)
+        shift
+        ;;
+      *)
+        echo "Unknown argument: ${1}"
+        echo -e "${usagemessage}"
+        exit 1
+        ;;
     esac
     shift
   done
 
-  usagemessage="Error, USAGE: $(basename "${0}") --role|-r --environment|-e --repouser|-u --reponame|-n --repoprivkeyfile|-k [--repobranch|-b] [--repodir|-d] [--eyamlpubkeyfile|-j] [--eyamlprivkeyfile|-m] [--gemsources|-s] [--help|-h] [--version|-v]"
-
   # Define required parameters.
-  if [[ -z "${FACTER_init_role}" || -z "${FACTER_init_env}" || -z "${FACTER_init_repouser}" || -z "${FACTER_init_reponame}" || -z "${FACTER_init_repoprivkeyfile}" ]]; then
-    echo "${usagemessage}"
+  if [[ -z "${FACTER_init_role}" || \
+        -z "${FACTER_init_env}"  || \
+        -z "${FACTER_init_repouser}" || \
+        -z "${FACTER_init_reponame}" || \
+        -z "${FACTER_init_repoprivkeyfile}" ]]; then
+    echo -e "${usagemessage}"
     exit 1
   fi
 
@@ -103,55 +125,66 @@ parse_args() {
 
 # Install yum packages if they're not already installed
 yum_install() {
-  PACKAGE_LIST=""
   for i in "$@"
   do
-    yum --noplugins list installed "${i}" > /dev/null 2>&1
-    if [[ $? == 0 ]]; then
-      echo "${i} is already installed"
-    else
-      PACKAGE_LIST="${PACKAGE_LIST} ${i}"
+    if ! rpm -q ${i} > /dev/null 2>&1; then
+      local RESULT=''
+      RESULT=$(yum install -y ${i} 2>&1)
+      if [[ $? != 0 ]]; then
+        log_error "Failed to install yum package: ${i}\nyum returned:\n${RESULT}"
+      else
+        echo "Installed yum package: ${i}"
+      fi
     fi
   done
-
-  if [[ -n "${PACKAGE_LIST}" ]]; then
-    yum install -y $(echo "${PACKAGE_LIST}" | xargs)
-  fi
 }
 
 # Install Ruby gems if they're not already installed
 gem_install() {
+  local RESULT=''
   for i in "$@"
   do
-    gem list --local $(echo "${i}" | cut -d ':' -f 1)  | grep $(echo "${i}" | cut -d ':' -f 1) > /dev/null 2>&1
-    if [[ $? == 0 ]]; then
-      echo "${i} is already installed"
+    if [[ ${i} =~ ^.*:.*$ ]];then
+      MODULE=$(echo ${i} | cut -d ':' -f 1)
+      VERSION=$(echo ${i} | cut -d ':' -f 2)
+      if ! gem list -i --local ${MODULE} --version ${VERSION} > /dev/null 2>&1; then
+        echo "Installing ${i}"
+        RESULT=$(gem install ${i} --no-ri --no-rdoc)
+        if [[ $? != 0 ]]; then
+          log_error "Failed to install gem: ${i}\ngem returned:\n${RESULT}"
+        fi
+      fi
     else
-      GEM_LIST="${GEM_LIST} ${i}"
+      if ! gem list -i --local ${i} > /dev/null 2>&1; then
+        echo "Installing ${i}"
+        RESULT=$(gem install ${i} --no-ri --no-rdoc)
+        if [[ $? != 0 ]]; then
+          log_error "Failed to install gem: ${i}\ngem returned:\n${RESULT}"
+        fi
+      fi
     fi
   done
-  if [[ -n "$GEM_LIST" ]]; then
-    gem install $(echo "$GEM_LIST" | xargs) --no-ri --no-rdoc
-  fi
 }
 
 print_version() {
   echo "${1}" "${2}"
 }
 
-print_help() {
-  echo Heeelp.
-}
-
 # Set custom facter facts
 set_facter() {
-  export FACTER_$1="${2}"
+  local key=${1}
+  #Note: The name of the evironment variable is not the same as the facter fact.
+  local export_key=FACTER_${key}
+  local value=${2}
+  export ${export_key}="${value}"
   if [[ ! -d /etc/facter ]]; then
-    mkdir -p /etc/facter/facts.d
+    mkdir -p /etc/facter/facts.d || log_error "Failed to create /etc/facter/facts.d"
   fi
-  echo "${1}=${2}" > /etc/facter/facts.d/"${1}".txt
-  chmod -R 600 /etc/facter
-  cat /etc/facter/facts.d/"${1}".txt
+  if ! echo "${key}=${value}" > /etc/facter/facts.d/"${key}".txt; then
+    log_error "Failed to create /etc/facter/facts.d/${key}.txt"
+  fi
+  chmod -R 600 /etc/facter || log_error "Failed to set permissions on /etc/facter"
+  cat /etc/facter/facts.d/"${key}".txt || log_error "Failed to create ${key}.txt"
 }
 
 setup_rhel7_repo() {
@@ -161,18 +194,19 @@ setup_rhel7_repo() {
   if [[ "$majorversion" == "7" ]] && [[ "$dist" == "RedHatEnterpriseServer" ]]; then
     echo "RedHat Enterprise version 7- adding extra repo for *-devel"
     yum_install yum-utils
-    yum-config-manager --enable rhui-REGION-rhel-server-optional
+    yum-config-manager --enable rhui-REGION-rhel-server-optional || log_error "Failed to run yum-config-manager"
   fi
 
 }
+
 install_ruby() {
   majorversion=$(lsb_release -rs | cut -f1 -d.)
   if [[ "$majorversion" == "6" ]]; then
   echo "Linux Major Version 6"
    ruby -v  > /dev/null 2>&1
    if [[ $? -ne 0 ]] || [[ $(ruby -v | awk '{print $2}' | cut -d '.' -f 1) -lt 2 ]]; then
-     yum remove -y ruby-*
-     yum install -y https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
+     yum remove -y ruby-* || log_error "Failed to remove old ruby"
+     yum_install https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el6.x86_64.rpm
    fi
   elif [[ "$majorversion" == "7" ]]; then
     echo "Linux Major version 7"
@@ -184,7 +218,7 @@ install_ruby() {
 set_gemsources() {
   GEM_SOURCES=
   tmp_sources=false
-  for i in $@; do
+  for i in "$@"; do
     if [[ "${tmp_sources}" == "true" ]]; then
       GEM_SOURCES="${i}"
       break
@@ -200,10 +234,11 @@ set_gemsources() {
     # Remove the old sources
     OLD_GEM_SOURCES=$(gem sources --list | tail -n+3 | tr '\n' ' ')
     for i in $OLD_GEM_SOURCES; do
-      gem sources -r "$i"
+      gem sources -r "$i" || log_error "Failed to remove gem source ${i}"
     done
 
     # Add the replacement sources
+    local NO_SUCCESS=1
     OIFS=$IFS && IFS=','
     for i in $GEM_SOURCES; do
       MAX_RETRIES=5
@@ -217,10 +252,15 @@ set_gemsources() {
           echo Sleeping for ${sleep_time}s before retrying ${attempts}/${MAX_RETRIES}
           sleep ${sleep_time}s
           attempts=$((attempts + 1))
+        else
+          NO_SUCCESS=0
         fi
       done
     done
     IFS=$OIFS
+    if [[ $NO_SUCCESS == 1 ]]; then
+      log_error "All gem sources failed to add"
+    fi
   fi
 }
 
@@ -232,7 +272,7 @@ install_yum_deps() {
 
 # Install the gem dependencies
 install_gem_deps() {
-  echo "Installing required gems"
+  echo "Installing puppet and related gems"
   gem_install puppet:3.7.4 hiera facter ruby-augeas hiera-eyaml ruby-shadow
 }
 
@@ -242,12 +282,12 @@ inject_ssh_key() {
   echo "Injecting private ssh key"
   GITHUB_PRI_KEY=$(cat "${FACTER_init_repoprivkeyfile}")
   if [[ ! -d /root/.ssh ]]; then
-    mkdir /root/.ssh
-    chmod 600 /root/.ssh
+    mkdir /root/.ssh || log_error "Failed to create /root/.ssh"
+    chmod 600 /root/.ssh || log_error "Failed to change permissions on /root/.ssh"
   fi
-  echo "${GITHUB_PRI_KEY}" > /root/.ssh/id_rsa
-  echo "StrictHostKeyChecking=no" > /root/.ssh/config
-  chmod -R 600 /root/.ssh
+  echo "${GITHUB_PRI_KEY}" > /root/.ssh/id_rsa || log_error "Failed to set ssh private key"
+  echo "StrictHostKeyChecking=no" > /root/.ssh/config ||log_error "Failed to set ssh config"
+  chmod -R 600 /root/.ssh || log_error "Failed to set permissions on /root/.ssh"
 }
 
 # Clone the git repo
@@ -255,21 +295,41 @@ clone_git_repo() {
   # Clone private repo.
   echo "Cloning ${FACTER_init_repouser}/${FACTER_init_reponame} repo"
   rm -rf "${FACTER_init_repodir}"
-  git clone -b "${FACTER_init_repobranch}" git@github.com:"${FACTER_init_repouser}"/"${FACTER_init_reponame}".git "${FACTER_init_repodir}"
   # Exit if the clone fails
-  if [[ ! -d "${FACTER_init_repodir}" ]]; then
-    echo "Failed to clone git@github.com:${FACTER_init_repouser}/${FACTER_init_reponame}.git" && exit 1
+  if ! git clone -b "${FACTER_init_repobranch}" git@github.com:"${FACTER_init_repouser}"/"${FACTER_init_reponame}".git "${FACTER_init_repodir}";
+  then
+    log_error "Failed to clone git@github.com:${FACTER_init_repouser}/${FACTER_init_reponame}.git"
   fi
 }
 
 # Symlink the cloned git repo to the usual location for Puppet to run
 symlink_puppet_dir() {
+  local RESULT=''
   # Link /etc/puppet to our private repo.
   PUPPET_DIR="${FACTER_init_repodir}/puppet"
-  rm -rf /etc/puppet > /dev/null 2>&1
-  rm /etc/hiera.yaml > /dev/null 2>&1
-  ln -s "${PUPPET_DIR}" /etc/puppet
-  ln -s /etc/puppet/hiera.yaml /etc/hiera.yaml
+  if [ -e /etc/puppet ]; then
+    RESULT=$(rm -rf /etc/puppet);
+    if [[ $? != 0 ]]; then
+      log_error "Failed to remove /etc/puppet\nrm returned:\n${RESULT}"
+    fi
+  fi
+
+  RESULT=$(ln -s "${PUPPET_DIR}" /etc/puppet)
+  if [[ $? != 0 ]]; then
+    log_error "Failed to create symlink from ${PUPPET_DIR}\nln returned:\n${RESULT}"
+  fi
+
+  if [ -e /etc/hiera.yaml ]; then
+    RESULT=$(rm -f /etc/hiera.yaml)
+    if [[ $? != 0 ]]; then
+      log_error "Failed to remove /etc/hiera.yaml\nrm returned:\n${RESULT}"
+    fi
+  fi
+
+  RESULT=$(ln -s /etc/puppet/hiera.yaml /etc/hiera.yaml)
+  if [[ $? != 0 ]]; then
+    log_error "Failed to create symlink from /etc/hiera.yaml\nln returned:\n${RESULT}"
+  fi
 }
 
 # Inject the eyaml keys
@@ -277,10 +337,10 @@ inject_eyaml_keys() {
   # If no eyaml keys have been provided, create some
   if [[ -z "${FACTER_init_eyamlpubkeyfile}" ]] && [[ -z "${FACTER_init_eyamlprivkeyfile}" ]] && [[ ! -d "/etc/puppet/secure/keys" ]]; then
     if [[ ! -d /etc/puppet/secure/keys ]]; then
-      mkdir -p /etc/puppet/secure/keys
-      chmod -R 500 /etc/puppet/secure
+      mkdir -p /etc/puppet/secure/keys || log_error "Failed to create /etc/puppet/secure/keys"
+      chmod -R 500 /etc/puppet/secure || log_error "Failed to change permissions on /etc/puppet/secure"
     fi
-    cd /etc/puppet/secure || exit
+    cd /etc/puppet/secure || log_error "Failed to cd to /etc/puppet/secure"
     echo -n "Creating eyaml key pair"
     eyaml createkeys
   else
@@ -297,12 +357,13 @@ inject_eyaml_keys() {
 }
 
 run_librarian() {
-  echo -n "Installing activesupport:4.2.6"
-  gem install activesupport:4.2.6 --no-ri --no-rdoc
-  echo -n "Installing librarian-puppet"
-  gem install librarian-puppet --no-ri --no-rdoc
-  echo -n "Installing Puppet modules"
-  librarian-puppet install --verbose
+  gem_install activesupport:4.2.6 librarian-puppet
+  echo -n "Running librarian-puppet"
+  local RESULT=''
+  RESULT=$(librarian-puppet install --verbose)
+  if [[ $? != 0 ]]; then
+    log_error "librarian-puppet failed.\nThe full output was:\n${RESULT}"
+  fi
   librarian-puppet show
 }
 
@@ -329,7 +390,7 @@ fetch_puppet_modules() {
     MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz
   fi
 
-  cd "${PUPPET_DIR}" || exit
+  cd "${PUPPET_DIR}" || log_error "Failed to cd to ${PUPPET_DIR}"
 
   if [[ ! -z "${FACTER_init_moduleshttpcache}" && "200" == $(curl "${FACTER_init_moduleshttpcache}"/"${MODULE_ARCH}"  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
     echo -n "Downloading pre-packed Puppet modules from cache..."
@@ -368,22 +429,40 @@ run_puppet() {
   echo ""
   echo "Running puppet apply"
   puppet apply /etc/puppet/manifests/site.pp --detailed-exitcodes
+
   PUPPET_EXIT=$?
 
-  if [ $PUPPET_EXIT == 2 ]; then
-    PUPPET_EXIT=0
-  fi
+  case $PUPPET_EXIT in
+    0 )
+      echo "Puppet run succeeded with no failures."
+      ;;
+    1 )
+      log_error "Puppet run failed."
+      ;;
+    2 )
+      echo "Puppet run succeeded, and some resources were changed."
+      ;;
+    4 )
+      log_error "Puppet run succeeded, but some resources failed."
+      ;;
+    6 )
+      log_error "Puppet run succeeded, and included both changes and failures."
+      ;;
+    * )
+      log_error "Puppet run returned unexpected exit code."
+      ;;
+  esac
 
-  echo ""
-  echo "Top 10 slowest Puppet resources"
-  echo "==============================="
-  PERFORMANCE_DATA=( $(grep evaluation_time /var/lib/puppet/reports/*/*.yaml | awk '{print $3}' | sort -n | tail -10 ) )
+  #Find the newest puppet log
+  local PUPPET_LOG=''
+  PUPPET_LOG=$(find /var/lib/puppet/reports -type f -exec ls -ltr {} + | tail -n 1 | awk '{print $9}')
+  PERFORMANCE_DATA=( $(grep evaluation_time "${PUPPET_LOG}" | awk '{print $2}' | sort -n | tail -10 ) )
+  echo "===============-Top 10 slowest Puppet resources-==============="
   for i in ${PERFORMANCE_DATA[*]}; do
     echo -n "${i}s - "
     echo "$(grep -B 3 "$i" /var/lib/puppet/reports/*/*.yaml | head -1 | awk '{print $2 $3}' )"
   done | tac
-
-  exit $PUPPET_EXIT
+  echo "===============-Top 10 slowest Puppet resources-==============="
 }
 
 main "$@"
