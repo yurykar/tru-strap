@@ -342,17 +342,25 @@ inject_eyaml_keys() {
     fi
     cd /etc/puppet/secure || log_error "Failed to cd to /etc/puppet/secure"
     echo -n "Creating eyaml key pair"
-    eyaml createkeys
+    eyaml createkeys || log_error "Failed to create eyaml keys."
   else
   # Or use the ones provided
+    mkdir -p /etc/puppet/secure/keys || log_error "Failed to create /etc/puppet/secure/keys"
     echo "Injecting eyaml keys"
-    EYAML_PUB_KEY=$(cat "${FACTER_init_eyamlpubkeyfile}")
-    EYAML_PRI_KEY=$(cat "${FACTER_init_eyamlprivkeyfile}")
-    mkdir -p /etc/puppet/secure/keys
-    echo "${EYAML_PUB_KEY}" > /etc/puppet/secure/keys/public_key.pkcs7.pem
-    echo "${EYAML_PRI_KEY}" > /etc/puppet/secure/keys/private_key.pkcs7.pem
-    chmod -R 500 /etc/puppet/secure
-    chmod 400 /etc/puppet/secure/keys/*.pem
+    local RESULT=''
+
+    RESULT=$(cp ${FACTER_init_eyamlpubkeyfile} /etc/puppet/secure/keys/public_key.pkcs7.pem)
+    if [[ $? != 0 ]]; then
+      log_error "Failed to insert public key:\n${RESULT}"
+    fi
+
+    RESULT=$(cp ${FACTER_init_eyamlprivkeyfile} /etc/puppet/secure/keys/private_key.pkcs7.pem)
+    if [[ $? != 0 ]]; then
+      log_error "Failed to insert private key:\n${RESULT}"
+    fi
+
+    chmod -R 500 /etc/puppet/secure || log_error "Failed to set permissions on /etc/puppet/secure"
+    chmod 400 /etc/puppet/secure/keys/*.pem || log_error "Failed to set permissions on /etc/puppet/secure/keys/*.pem"
   fi
 }
 
