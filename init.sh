@@ -388,7 +388,9 @@ fetch_puppet_modules() {
     ROLE_PUPPETFILE="${ENV_ROLE_PUPPETFILE}"
   fi
   PUPPETFILE=/etc/puppet/Puppetfile
-  rm -f "${PUPPETFILE}" ; cat /etc/puppet/Puppetfiles/"${BASE_PUPPETFILE}" /etc/puppet/Puppetfiles/"${ROLE_PUPPETFILE}" > "${PUPPETFILE}"
+  rm -f "${PUPPETFILE}" ; cat /etc/puppet/Puppetfiles/"${BASE_PUPPETFILE}" > "${PUPPETFILE}"
+  echo "" >> "${PUPPETFILE}"
+  cat /etc/puppet/Puppetfiles/"${ROLE_PUPPETFILE}" >> "${PUPPETFILE}"
 
 
   PUPPETFILE_MD5SUM=$(md5sum "${PUPPETFILE}" | cut -d " " -f 1)
