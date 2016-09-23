@@ -203,7 +203,7 @@ install_ruby() {
   majorversion=$(lsb_release -rs | cut -f1 -d.)
   ruby_v="2.1.5"
   ruby -v  > /dev/null 2>&1
-  if [[ $? -ne 0 ]] || [[ $(ruby -v | awk '{print $2}' | cut -d 'p' -f 1) == $ruby_v ]]; then
+  if [[ $? -ne 0 ]] || [[ $(ruby -v | awk '{print $2}' | cut -d 'p' -f 1) != $ruby_v ]]; then
     yum remove -y ruby-* || log_error "Failed to remove old ruby"
     yum_install https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el${majorversion}.x86_64.rpm
   fi
