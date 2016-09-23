@@ -210,7 +210,7 @@ install_ruby() {
    fi
   elif [[ "$majorversion" == "7" ]]; then
     echo "Linux Major version 7"
-    yum_install ruby
+    yum_install ruby ruby-devel
   fi
 }
 
