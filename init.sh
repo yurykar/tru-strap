@@ -210,7 +210,7 @@ install_ruby() {
    fi
   elif [[ "$majorversion" == "7" ]]; then
     echo "Linux Major version 7"
-    yum_install ruby ruby-devel
+    rpm -Uvh https://s3-eu-west-1.amazonaws.com/msm-public-repo/ruby/ruby-2.1.5-2.el7.x86_64.rpm
   fi
 }
 
