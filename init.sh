@@ -333,10 +333,11 @@ inject_eyaml_keys() {
   # create secure group
   GRP='secure'
   getent group $GRP
-  case $? in
-    0) echo "group $GRP exisits" ;;
-    2) ( groupadd $GRP ; echo "added group $GRP" ) || log_error "Failed to create group $GRP" ;;
-    *) log_error "Failed to verify group $GRP" ;;
+  ret=$?
+  case $ret in
+    0) echo "group $GRP exists" ;;
+    2) ( groupadd $GRP && echo "added group $GRP" ) || log_error "Failed to create group $GRP" ;;
+    *) log_error "Exit code $ret : Failed to verify group $GRP" ;;
   esac
 
   if [[ ! -d /etc/puppet/secure/keys ]]; then
