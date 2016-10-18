@@ -329,18 +329,28 @@ symlink_puppet_dir() {
 
 # Inject the eyaml keys
 inject_eyaml_keys() {
+
+  # create secure group
+  GRP='secure'
+  getent group $GRP
+  ret=$?
+  case $ret in
+    0) echo "group $GRP exists" ;;
+    2) ( groupadd $GRP && echo "added group $GRP" ) || log_error "Failed to create group $GRP" ;;
+    *) log_error "Exit code $ret : Failed to verify group $GRP" ;;
+  esac
+
+  if [[ ! -d /etc/puppet/secure/keys ]]; then
+    mkdir -p /etc/puppet/secure/keys || log_error "Failed to create /etc/puppet/secure/keys"
+    chmod -R 550 /etc/puppet/secure || log_error "Failed to change permissions on /etc/puppet/secure"
+  fi
   # If no eyaml keys have been provided, create some
-  if [[ -z "${FACTER_init_eyamlpubkeyfile}" ]] && [[ -z "${FACTER_init_eyamlprivkeyfile}" ]] && [[ ! -d "/etc/puppet/secure/keys" ]]; then
-    if [[ ! -d /etc/puppet/secure/keys ]]; then
-      mkdir -p /etc/puppet/secure/keys || log_error "Failed to create /etc/puppet/secure/keys"
-      chmod -R 500 /etc/puppet/secure || log_error "Failed to change permissions on /etc/puppet/secure"
-    fi
+  if [[ -z "${FACTER_init_eyamlpubkeyfile}" ]] && [[ -z "${FACTER_init_eyamlprivkeyfile}" ]]; then
     cd /etc/puppet/secure || log_error "Failed to cd to /etc/puppet/secure"
     echo -n "Creating eyaml key pair"
     eyaml createkeys || log_error "Failed to create eyaml keys."
   else
   # Or use the ones provided
-    mkdir -p /etc/puppet/secure/keys || log_error "Failed to create /etc/puppet/secure/keys"
     echo "Injecting eyaml keys"
     local RESULT=''
 
@@ -354,8 +364,8 @@ inject_eyaml_keys() {
       log_error "Failed to insert private key:\n${RESULT}"
     fi
 
-    chmod -R 500 /etc/puppet/secure || log_error "Failed to set permissions on /etc/puppet/secure"
-    chmod 400 /etc/puppet/secure/keys/*.pem || log_error "Failed to set permissions on /etc/puppet/secure/keys/*.pem"
+    chgrp -R $GRP /etc/puppet/secure || log_error "Failed to change group on /etc/puppet/secure"
+    chmod 440 /etc/puppet/secure/keys/*.pem || log_error "Failed to set permissions on /etc/puppet/secure/keys/*.pem"
   fi
 }
 
