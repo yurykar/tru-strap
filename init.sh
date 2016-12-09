@@ -296,7 +296,7 @@ inject_repo_token() {
   echo "Injecting github access token"
   if [[ ! -z ${FACTER_init_repotoken} ]]; then
     echo "${FACTER_init_repotoken}" >> /root/.git-credentials || log_error "Failed to add access token"
-    chmod -R 600 /root/.git-credentials || log_error "Failed to set permissions on /root/.git-credentials"
+    chmod 600 /root/.git-credentials || log_error "Failed to set permissions on /root/.git-credentials"
   fi
 }
 
