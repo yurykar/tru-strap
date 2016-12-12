@@ -9,6 +9,7 @@ main() {
     set_gemsources "$@"
     install_gem_deps
     inject_ssh_key
+    inject_repo_token
     clone_git_repo
     symlink_puppet_dir
     inject_eyaml_keys
@@ -22,6 +23,7 @@ usagemessage="Error, USAGE: $(basename "${0}") \n \
   --repouser|-u \n \
   --reponame|-n \n \
   --repoprivkeyfile|-k \n \
+  [--repotoken|-t] \n \
   [--repobranch|-b] \n \
   [--repodir|-d] \n \
   [--eyamlpubkeyfile|-j] \n \
@@ -67,6 +69,10 @@ parse_args() {
         ;;
       --repoprivkeyfile|-k)
         set_facter init_repoprivkeyfile "${2}"
+        shift
+        ;;
+      --repotoken|-t)
+        set_facter init_repotoken "${2}"
         shift
         ;;
       --repobranch|-b)
@@ -283,6 +289,16 @@ inject_ssh_key() {
   echo "${GITHUB_PRI_KEY}" > /root/.ssh/id_rsa || log_error "Failed to set ssh private key"
   echo "StrictHostKeyChecking=no" > /root/.ssh/config ||log_error "Failed to set ssh config"
   chmod -R 600 /root/.ssh || log_error "Failed to set permissions on /root/.ssh"
+}
+
+# Inject the Git token to allow git cloning
+inject_repo_token() {
+  echo "Injecting github access token"
+  if [[ ! -z ${FACTER_init_repotoken} ]]; then
+    echo "${FACTER_init_repotoken}" >> /root/.git-credentials || log_error "Failed to add access token"
+    chmod 600 /root/.git-credentials || log_error "Failed to set permissions on /root/.git-credentials"
+    git config --global credential.helper store || log_error "Failed to set git config"
+  fi
 }
 
 # Clone the git repo
