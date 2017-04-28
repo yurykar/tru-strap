@@ -307,7 +307,7 @@ clone_git_repo() {
   echo "Cloning ${FACTER_init_repouser}/${FACTER_init_reponame} repo"
   rm -rf "${FACTER_init_repodir}"
   # Exit if the clone fails
-  if ! git clone -b "${FACTER_init_repobranch}" git@github.com:"${FACTER_init_repouser}"/"${FACTER_init_reponame}".git "${FACTER_init_repodir}";
+  if ! git clone --depth=1 -b "${FACTER_init_repobranch}" git@github.com:"${FACTER_init_repouser}"/"${FACTER_init_reponame}".git "${FACTER_init_repodir}";
   then
     log_error "Failed to clone git@github.com:${FACTER_init_repouser}/${FACTER_init_reponame}.git"
   fi
