@@ -99,11 +99,12 @@ parse_args() {
         PASSWD="${2}"
         shift
         ;;
+      --puppet4)
+        set_facter init_puppet "4"
+        ;;
       --gemsources)
-        shift
         ;;
       --debug)
-        shift
         ;;
       *)
         echo "Unknown argument: ${1}"
@@ -273,8 +274,12 @@ install_yum_deps() {
 
 # Install the gem dependencies
 install_gem_deps() {
+  local PUPPET="3.7.4"
+  if [ -n "${FACTER_init_puppet}" ]; then
+    PUPPET="4.8.2"
+  fi
   echo "Installing puppet and related gems"
-  gem_install puppet:4.8.2 hiera facter ruby-augeas hiera-eyaml ruby-shadow
+  gem_install puppet:${PUPPET} hiera facter ruby-augeas hiera-eyaml ruby-shadow
 }
 
 # Inject the SSH key to allow git cloning
@@ -314,35 +319,39 @@ clone_git_repo() {
 }
 
 # Symlink the cloned git repo to the usual location for Puppet to run
-# Puppet 4 directories
 symlink_puppet_dir() {
   local RESULT=''
-  # Link /etc/puppetlabs/puppet to our private repo.
+  local PUPPET_ETC="/etc/puppet"
+  if [ -n "${FACTER_init_puppet}" ]; then
+    PUPPET_ETC="/etc/puppetlabs/puppet"
+    # new modules location for puppet 4
+    mkdir -p /etc/puppetlabs/code
+    mkdir -p /etc/puppet
+  fi
+  # Link /etc/puppet to our private repo.
   PUPPET_DIR="${FACTER_init_repodir}/puppet"
-  # new modules location for puppet 4
-  mkdir -p /etc/puppetlabs/code
-  mkdir -p /etc/puppet
-
-  if [ -e /etc/puppetlabs/puppet ]; then
-    RESULT=$(rm -rf /etc/puppetlabs/puppet);
+  if [ -e ${PUPPET_ETC} ]; then
+    RESULT=$(rm -rf ${PUPPET_ETC});
     if [[ $? != 0 ]]; then
-      log_error "Failed to remove /etc/puppetlabs/puppet\nrm returned:\n${RESULT}"
+      log_error "Failed to remove ${PUPPET_ETC}\nrm returned:\n${RESULT}"
     fi
   fi
 
-  RESULT=$(ln -s "${PUPPET_DIR}" /etc/puppetlabs/puppet)
+  RESULT=$(ln -s "${PUPPET_DIR}" "${PUPPET_ETC}")
   if [[ $? != 0 ]]; then
     log_error "Failed to create symlink from ${PUPPET_DIR}\nln returned:\n${RESULT}"
   fi
 
-  RESULT=$(ln -s /etc/puppetlabs/puppet/modules /etc/puppetlabs/code/modules)
-  if [[ $? != 0 ]]; then
-    log_error "Failed to create symlink from ${PUPPET_DIR}/modules\nln returned:\n${RESULT}"
-  fi
+  if [ -n "${FACTER_init_puppet}" ]; then
+    RESULT=$(ln -s /etc/puppetlabs/puppet/modules /etc/puppetlabs/code/modules)
+    if [[ $? != 0 ]]; then
+      log_error "Failed to create symlink from ${PUPPET_DIR}/modules\nln returned:\n${RESULT}"
+    fi
 
-  RESULT=$(ln -s /etc/puppetlabs/puppet/hieradata /etc/puppet/hieradata)
-  if [[ $? != 0 ]]; then
-    log_error "Failed to create symlink from ${PUPPET_DIR}/hieradata\nln returned:\n${RESULT}"
+    RESULT=$(ln -s /etc/puppetlabs/puppet/hieradata /etc/puppet/hieradata)
+    if [[ $? != 0 ]]; then
+      log_error "Failed to create symlink from ${PUPPET_DIR}/hieradata\nln returned:\n${RESULT}"
+    fi
   fi
 
   if [ -e /etc/hiera.yaml ]; then
@@ -352,7 +361,7 @@ symlink_puppet_dir() {
     fi
   fi
 
-  RESULT=$(ln -s /etc/puppetlabs/puppet/hiera.yaml /etc/hiera.yaml)
+  RESULT=$(ln -s ${PUPPET_ETC}/hiera.yaml /etc/hiera.yaml)
   if [[ $? != 0 ]]; then
     log_error "Failed to create symlink from /etc/hiera.yaml\nln returned:\n${RESULT}"
   fi
@@ -372,8 +381,8 @@ inject_eyaml_keys() {
   esac
 
   if [[ ! -d /etc/puppet/secure/keys ]]; then
-    mkdir -p /etc/puppet/secure/keys || log_error "Failed to create /etc/puppetlabs/puppet/secure/keys"
-    chmod -R 550 /etc/puppet/secure || log_error "Failed to change permissions on /etc/puppetlabs/puppet/secure"
+    mkdir -p /etc/puppet/secure/keys || log_error "Failed to create /etc/puppet/secure/keys"
+    chmod -R 550 /etc/puppet/secure || log_error "Failed to change permissions on /etc/puppet/secure"
   fi
   # If no eyaml keys have been provided, create some
   if [[ -z "${FACTER_init_eyamlpubkeyfile}" ]] && [[ -z "${FACTER_init_eyamlprivkeyfile}" ]]; then
@@ -417,16 +426,20 @@ fetch_puppet_modules() {
   ENV_ROLE_PUPPETFILE="${FACTER_init_env}/Puppetfile.${FACTER_init_role}"
   BASE_PUPPETFILE=Puppetfile.base
   ROLE_PUPPETFILE=Puppetfile."${FACTER_init_role}"
-  if [[ -f "/etc/puppetlabs/puppet/Puppetfiles/${ENV_BASE_PUPPETFILE}" ]]; then
+  local PUPPET_ETC="/etc/puppet"
+  if [ -n "${FACTER_init_puppet}" ]; then
+    PUPPET_ETC="/etc/puppetlabs/puppet"
+  fi
+  if [[ -f "${PUPPET_ETC}/Puppetfiles/${ENV_BASE_PUPPETFILE}" ]]; then
     BASE_PUPPETFILE="${ENV_BASE_PUPPETFILE}"
   fi
-  if [[ -f "/etc/puppetlabs/puppet/Puppetfiles/${ENV_ROLE_PUPPETFILE}" ]]; then
+  if [[ -f "${PUPPET_ETC}/Puppetfiles/${ENV_ROLE_PUPPETFILE}" ]]; then
     ROLE_PUPPETFILE="${ENV_ROLE_PUPPETFILE}"
   fi
-  PUPPETFILE=/etc/puppetlabs/puppet/Puppetfile
-  rm -f "${PUPPETFILE}" ; cat /etc/puppetlabs/puppet/Puppetfiles/"${BASE_PUPPETFILE}" > "${PUPPETFILE}"
+  PUPPETFILE=${PUPPET_ETC}/Puppetfile
+  rm -f "${PUPPETFILE}" ; cat ${PUPPET_ETC}/Puppetfiles/"${BASE_PUPPETFILE}" > "${PUPPETFILE}"
   echo "" >> "${PUPPETFILE}"
-  cat /etc/puppetlabs/puppet/Puppetfiles/"${ROLE_PUPPETFILE}" >> "${PUPPETFILE}"
+  cat ${PUPPET_ETC}/Puppetfiles/"${ROLE_PUPPETFILE}" >> "${PUPPETFILE}"
 
 
   PUPPETFILE_MD5SUM=$(md5sum "${PUPPETFILE}" | cut -d " " -f 1)
@@ -477,7 +490,11 @@ run_puppet() {
   export LC_ALL=en_GB.utf8
   echo ""
   echo "Running puppet apply"
-  puppet apply /etc/puppetlabs/puppet/manifests/site.pp --detailed-exitcodes
+  local PUPPET_ETC="/etc/puppet"
+  if [ -n "${FACTER_init_puppet}" ]; then
+    PUPPET_ETC="/etc/puppetlabs/puppet"
+  fi
+  puppet apply ${PUPPET_ETC}/manifests/site.pp --detailed-exitcodes
 
   PUPPET_EXIT=$?
 
@@ -504,12 +521,16 @@ run_puppet() {
 
   #Find the newest puppet log
   local PUPPET_LOG=''
-  PUPPET_LOG=$(find /opt/puppetlabs/puppet/cache/reports -type f -exec ls -ltr {} + | tail -n 1 | awk '{print $9}')
+  local PUPPET_REPORTS="/var/lib/puppet/reports"
+  if [ -n "${FACTER_init_puppet}" ]; then
+    PUPPET_REPORTS="/opt/puppetlabs/puppet/cache/reports"
+  fi
+  PUPPET_LOG=$(find ${PUPPET_REPORTS} -type f -exec ls -ltr {} + | tail -n 1 | awk '{print $9}')
   PERFORMANCE_DATA=( $(grep evaluation_time "${PUPPET_LOG}" | awk '{print $2}' | sort -n | tail -10 ) )
   echo "===============-Top 10 slowest Puppet resources-==============="
   for i in ${PERFORMANCE_DATA[*]}; do
     echo -n "${i}s - "
-    echo "$(grep -B 3 "$i" /opt/puppetlabs/puppet/cache/reports/*/*.yaml | head -1 | awk '{print $2 $3}' )"
+    echo "$(grep -B 3 "$i" ${PUPPET_REPORTS}/*/*.yaml | head -1 | awk '{print $2 $3}' )"
   done | tac
   echo "===============-Top 10 slowest Puppet resources-==============="
 }
