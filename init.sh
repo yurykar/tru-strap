@@ -386,6 +386,9 @@ inject_eyaml_keys() {
 }
 
 run_librarian() {
+  #Prevent to get puppet_forge:2.2.5, it contains breaking change for librarian-puppet. See: https://github.com/puppetlabs/forge-ruby/blob/master/CHANGELOG.md#v225---2017-06-26
+  gem_install puppet_forge:2.2.4
+  
   gem_install activesupport:4.2.6 librarian-puppet
   echo -n "Running librarian-puppet"
   local RESULT=''
