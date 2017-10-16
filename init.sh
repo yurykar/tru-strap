@@ -402,17 +402,21 @@ fetch_puppet_modules() {
   ENV_ROLE_PUPPETFILE="${FACTER_init_env}/Puppetfile.${FACTER_init_role}"
   BASE_PUPPETFILE=Puppetfile.base
   ROLE_PUPPETFILE=Puppetfile."${FACTER_init_role}"
+
+  # Override ./Puppetfile.base with $ENV/Puppetfile.base if one exists.
   if [[ -f "/etc/puppet/Puppetfiles/${ENV_BASE_PUPPETFILE}" ]]; then
     BASE_PUPPETFILE="${ENV_BASE_PUPPETFILE}"
   fi
+  # Override Puppetfile.$ROLE with $ENV/Puppetfile.$ROLE if one exists.
   if [[ -f "/etc/puppet/Puppetfiles/${ENV_ROLE_PUPPETFILE}" ]]; then
     ROLE_PUPPETFILE="${ENV_ROLE_PUPPETFILE}"
   fi
+
+  # Concatenate base, and role specific puppetfiles to produce final module list.
   PUPPETFILE=/etc/puppet/Puppetfile
   rm -f "${PUPPETFILE}" ; cat /etc/puppet/Puppetfiles/"${BASE_PUPPETFILE}" > "${PUPPETFILE}"
   echo "" >> "${PUPPETFILE}"
   cat /etc/puppet/Puppetfiles/"${ROLE_PUPPETFILE}" >> "${PUPPETFILE}"
-
 
   PUPPETFILE_MD5SUM=$(md5sum "${PUPPETFILE}" | cut -d " " -f 1)
   if [[ ! -z $PASSWD ]]; then
