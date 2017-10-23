@@ -15,6 +15,7 @@ main() {
     inject_eyaml_keys
     fetch_puppet_modules
     run_puppet
+    secure_puppet_folder
 }
 
 usagemessage="Error, USAGE: $(basename "${0}") \n \
@@ -29,6 +30,7 @@ usagemessage="Error, USAGE: $(basename "${0}") \n \
   [--eyamlpubkeyfile|-j] \n \
   [--eyamlprivkeyfile|-m] \n \
   [--gemsources|-s] \n \
+  [--securepuppet|-z] \n \
   [--help|-h] \n \
   [--version|-v]"
 
@@ -100,6 +102,10 @@ parse_args() {
         shift
         ;;
       --gemsources)
+        shift
+        ;;
+      --securepuppet|-z)
+        SECURE_PUPPET="${2}"
         shift
         ;;
       --debug)
@@ -501,6 +507,17 @@ run_puppet() {
     echo "$(grep -B 3 "evaluation_time: $i" /var/lib/puppet/reports/*/*.yaml | head -1 | awk '{$1="";print}' )"
   done | tac
   echo "===============-Top 10 slowest Puppet resources-==============="
+}
+
+secure_puppet_folder()  {
+  local RESULT=''
+  if [[ ! -z "${SECURE_PUPPET}" && "${SECURE_PUPPET}" == "true" && -d ${FACTER_init_repodir}/puppet ]]; then
+    echo "secure_puppet_folder : chmod -R 700 ${FACTER_init_repodir}/puppet directory"
+    RESULT=$(chmod -R 700 ${FACTER_init_repodir}/puppet)
+    if [[ $? != 0 ]]; then
+      log_error "Failed to set permissions on ${FACTER_init_repodir}/puppet:\n${RESULT}"
+    fi
+  fi
 }
 
 main "$@"
