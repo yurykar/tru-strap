@@ -472,7 +472,7 @@ run_puppet() {
   export LC_ALL=en_GB.utf8
   echo ""
   echo "Running puppet apply"
-  export FACTERLIB="${FACTERLIB}:$(ipaddress_primary_path)”
+  export FACTERLIB="${FACTERLIB}:$(ipaddress_primary_path)"
   puppet apply /etc/puppet/manifests/site.pp --detailed-exitcodes
 
   PUPPET_EXIT=$?
