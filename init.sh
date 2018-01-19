@@ -455,7 +455,7 @@ fetch_puppet_modules() {
       tar xpf $package
       echo "================="
       echo "Unpacked modules:"
-      find ./modules -maxdepth 1 -type d | cut -d '/' -f 3
+      puppet module list --color false
       echo "================="
     else
       echo "Seems we failed to decrypt archive file... running librarian-puppet instead"
