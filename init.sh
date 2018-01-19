@@ -392,8 +392,8 @@ inject_eyaml_keys() {
 }
 
 run_librarian() {
-  gem_install activesupport:4.2.6 librarian-puppet
   echo -n "Running librarian-puppet"
+  gem_install activesupport:4.2.6 librarian-puppet
   local RESULT=''
   RESULT=$(librarian-puppet install --verbose)
   if [[ $? != 0 ]]; then
@@ -430,7 +430,7 @@ fetch_puppet_modules() {
   else
     MODULE_ARCH=${FACTER_init_role}."${PUPPETFILE_MD5SUM}".tar.gz
   fi
-
+  echo "Cached puppet module tar ball should be ${MODULE_ARCH}, checking if it exists"
   cd "${PUPPET_DIR}" || log_error "Failed to cd to ${PUPPET_DIR}"
 
   if [[ ! -z "${FACTER_init_moduleshttpcache}" && "200" == $(curl "${FACTER_init_moduleshttpcache}"/"${MODULE_ARCH}"  --head --silent | head -n 1 | cut -d ' ' -f 2) ]]; then
@@ -463,6 +463,7 @@ fetch_puppet_modules() {
     fi
 
   else
+    echo "Nope!"
     run_librarian
   fi
 }
