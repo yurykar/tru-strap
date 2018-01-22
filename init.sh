@@ -281,6 +281,11 @@ install_yum_deps() {
 install_gem_deps() {
   echo "Installing puppet and related gems"
   gem_install puppet:3.8.7 hiera facter ruby-augeas hiera-eyaml ruby-shadow facter_ipaddress_primary
+
+  # Configure facter_ipaddress_primary so it works outside this script.
+  # i.e Users logging in interactively can run puppet apply successfully
+  echo 'export FACTERLIB="${FACTERLIB}:$(ipaddress_primary_path)"'>/etc/profile.d/ipaddress_primary.sh
+  chmod 0755 /etc/profile.d/ipaddress_primary.sh
 }
 
 # Inject the SSH key to allow git cloning
