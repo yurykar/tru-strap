@@ -14,6 +14,7 @@ main() {
     symlink_puppet_dir
     inject_eyaml_keys
     fetch_puppet_modules
+    configure_global_gemrc
     run_puppet
     secure_puppet_folder
 }
@@ -471,6 +472,12 @@ fetch_puppet_modules() {
     echo "Nope!"
     run_librarian
   fi
+}
+
+# Configure the global gemrc file (effectively sets artifactory3 as source for all gem runs)
+configure_global_gemrc() {
+  echo "Moving root's .gemrc to global location (/etc/gemrc)"
+  mv /root/.gemrc /etc/gemrc
 }
 
 # Execute the Puppet run
