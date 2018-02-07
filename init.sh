@@ -7,6 +7,7 @@ main() {
     install_yum_deps
     install_ruby
     set_gemsources "$@"
+    configure_global_gemrc
     install_gem_deps
     inject_ssh_key
     inject_repo_token
@@ -470,6 +471,16 @@ fetch_puppet_modules() {
   else
     echo "Nope!"
     run_librarian
+  fi
+}
+
+# Move root's .gemrc to global location (/etc/gemrc) to standardise all gem environment sources
+configure_global_gemrc() {
+  if [ -f /root/.gemrc ]; then
+    echo "Moving root's .gemrc to global location (/etc/gemrc)"
+    mv /root/.gemrc /etc/gemrc
+  else
+    echo "  Warning: /root/.gemrc did not exist!"
   fi
 }
 
