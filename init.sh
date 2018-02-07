@@ -7,6 +7,7 @@ main() {
     install_yum_deps
     install_ruby
     set_gemsources "$@"
+    configure_global_gemrc
     install_gem_deps
     inject_ssh_key
     inject_repo_token
@@ -14,7 +15,6 @@ main() {
     symlink_puppet_dir
     inject_eyaml_keys
     fetch_puppet_modules
-    configure_global_gemrc
     run_puppet
     secure_puppet_folder
 }
