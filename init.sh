@@ -474,10 +474,14 @@ fetch_puppet_modules() {
   fi
 }
 
-# Configure the global gemrc file (effectively sets artifactory3 as source for all gem runs)
+# Move root's .gemrc to global location (/etc/gemrc) to standardise all gem environment sources
 configure_global_gemrc() {
-  echo "Moving root's .gemrc to global location (/etc/gemrc)"
-  mv /root/.gemrc /etc/gemrc
+  if [ -f /root/.gemrc ]; then
+    echo "Moving root's .gemrc to global location (/etc/gemrc)"
+    mv /root/.gemrc /etc/gemrc
+  else
+    echo "  Warning: /root/.gemrc did not exist!"
+  fi
 }
 
 # Execute the Puppet run
