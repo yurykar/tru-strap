@@ -381,6 +381,9 @@ inject_eyaml_keys() {
   # Or use the ones provided
     echo "Injecting eyaml keys"
     local RESULT=''
+    
+    echo 'Just before the eyaml key copy...'
+    ls -al /root/.eyaml || true
 
     RESULT=$(cp ${FACTER_init_eyamlpubkeyfile} /etc/puppet/secure/keys/public_key.pkcs7.pem)
     if [[ $? != 0 ]]; then
@@ -394,6 +397,14 @@ inject_eyaml_keys() {
 
     chgrp -R $GRP /etc/puppet/secure || log_error "Failed to change group on /etc/puppet/secure"
     chmod 440 /etc/puppet/secure/keys/*.pem || log_error "Failed to set permissions on /etc/puppet/secure/keys/*.pem"
+    
+    echo 'Keys should be copied by now...'
+    ls -al /root/.eyaml || true
+    echo '... and the secure folder...'
+    ls -al /etc/puppet/secure/keys || true
+    echo '... and the vars...'
+    echo ${FACTER_init_eyamlpubkeyfile}
+    echo ${FACTER_init_eyamlprivkeyfile}
   fi
 }
 
