@@ -4,6 +4,7 @@
 main() {
     parse_args "$@"
     setup_rhel7_repo
+    upgrade_nss
     install_yum_deps
     install_ruby
     set_gemsources "$@"
@@ -210,6 +211,15 @@ setup_rhel7_repo() {
     yum-config-manager --enable rhui-REGION-rhel-server-optional || log_error "Failed to run yum-config-manager"
   fi
 
+}
+
+upgrade_nss() {
+  yum_install redhat-lsb-core
+  majorversion=$(lsb_release -rs | cut -f1 -d.)
+  if [[ "$majorversion" == "6" ]]; then
+    echo "Version 6 - Upgrading NSS package TLS1.2 cloning from GitHub.com"
+    yum upgrade -y nss 2>&1 || log_error "Failed to upgrade nss package"
+  fi
 }
 
 install_ruby() {
