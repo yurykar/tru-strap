@@ -149,6 +149,7 @@ prepend_nameserver_for_skydns() {
     DHCLIENT_OPTION="prepend domain-name-servers $AWS_DNS_IP;"
     echo "    $DHCLIENT_OPTION"
     grep "$DHCLIENT_OPTION" /etc/dhcp/dhclient.conf 1>/dev/null || echo $DHCLIENT_OPTION >> /etc/dhcp/dhclient.conf
+    dhclient -r && dhclient || echo "Could not renew DHCP lease. Continuing..."
   fi
 }
 
