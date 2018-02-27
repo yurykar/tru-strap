@@ -3,6 +3,7 @@
 
 main() {
     parse_args "$@"
+    prepend_nameserver_for_skydns
     setup_rhel7_repo
     upgrade_nss
     install_yum_deps
@@ -135,6 +136,20 @@ parse_args() {
   # Set some defaults if they aren't given on the command line.
   [[ -z "${FACTER_init_repobranch}" ]] && set_facter init_repobranch master
   [[ -z "${FACTER_init_repodir}" ]] && set_facter init_repodir /opt/"${FACTER_init_reponame}"
+}
+
+# For the role skydns, prepend the nameserver to the list returned by DHCP
+prepend_nameserver_for_skydns() {
+  if [[ $FACTER_init_role == "skydns" ]]; then
+    echo "Prepending dhclient domain-name-server..."
+    MAC_ADDR=$(cat /sys/class/net/eth0/address)
+    VPC_CIDR=$(curl --silent 169.254.169.254/latest/meta-data/network/interfaces/macs/${MAC_ADDR}/vpc-ipv4-cidr-block)
+    VPC_IP=$(echo $VPC_CIDR | cut -d'/' -f1)
+    AWS_DNS_IP=$(echo $VPC_IP | sed -e "s/\([0-9]\+\)\.\([0-9]\+\)\.\([0-9]\+\)\..\+/\1.\2.\3.2/gi")
+    DHCLIENT_OPTION="prepend domain-name-servers $AWS_DNS_IP;"
+    echo "    $DHCLIENT_OPTION"
+    grep "$DHCLIENT_OPTION" /etc/dhcp/dhclient.conf 1>/dev/null || echo $DHCLIENT_OPTION >> /etc/dhcp/dhclient.conf
+  fi
 }
 
 # Install yum packages if they're not already installed
