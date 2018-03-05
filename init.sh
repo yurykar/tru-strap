@@ -307,6 +307,9 @@ install_yum_deps() {
 # Install the gem dependencies
 install_gem_deps() {
   echo "Installing puppet and related gems"
+  gem_install unversioned_gem_manifest:1.0.0
+  # Default in /tmp may be unreadable for systems that overmount /tmp (AEM)
+  export RUBYGEMS_UNVERSIONED_MANIFEST=/var/log/unversioned_gems.yaml  
   gem_install puppet:3.8.7 hiera facter ruby-augeas hiera-eyaml ruby-shadow facter_ipaddress_primary
 
   # Configure facter_ipaddress_primary so it works outside this script.
