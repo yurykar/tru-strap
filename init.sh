@@ -310,7 +310,7 @@ install_gem_deps() {
   gem_install unversioned_gem_manifest:1.0.0
   # Default in /tmp may be unreadable for systems that overmount /tmp (AEM)
   export RUBYGEMS_UNVERSIONED_MANIFEST=/var/log/unversioned_gems.yaml  
-  gem_install puppet:3.8.7 hiera facter ruby-augeas hiera-eyaml ruby-shadow facter_ipaddress_primary
+  gem_install puppet:3.8.7 hiera facter ruby-augeas hiera-eyaml ruby-shadow facter_ipaddress_primary:1.0.1
 
   # Configure facter_ipaddress_primary so it works outside this script.
   # i.e Users logging in interactively can run puppet apply successfully
@@ -428,7 +428,7 @@ inject_eyaml_keys() {
 
 run_librarian() {
   echo -n "Running librarian-puppet"
-  gem_install activesupport:4.2.6 librarian-puppet
+  gem_install activesupport:4.2.6 librarian-puppet:3.0.0
   local RESULT=''
   RESULT=$(librarian-puppet install --verbose)
   if [[ $? != 0 ]]; then
