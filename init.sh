@@ -35,6 +35,8 @@ usagemessage="Error, USAGE: $(basename "${0}") \n \
   [--gemsources|-s] \n \
   [--securepuppet|-z] \n \
   [--help|-h] \n \
+  [--debug] \n \
+  [--puppet-opts] \n \
   [--version|-v]"
 
 function log_error() {
@@ -109,6 +111,10 @@ parse_args() {
         ;;
       --securepuppet|-z)
         SECURE_PUPPET="${2}"
+        shift
+        ;;
+      --puppet-opts)
+        PUPPET_APPLY_OPTS="${2}"
         shift
         ;;
       --debug)
@@ -519,7 +525,7 @@ run_puppet() {
   echo ""
   echo "Running puppet apply"
   export FACTERLIB="${FACTERLIB}:$(ipaddress_primary_path)"
-  puppet apply /etc/puppet/manifests/site.pp --detailed-exitcodes
+  puppet apply ${PUPPET_APPLY_OPTS} /etc/puppet/manifests/site.pp --detailed-exitcodes
 
   PUPPET_EXIT=$?
 
