@@ -1,43 +1,19 @@
 #!/bin/bash
-# Tru-Strap: prepare an instance for a Puppet run
+#Tru-Strap: prepare an instance for a Puppet run
 
 main() {
-    parse_args "$@"
-    prepend_nameserver_for_skydns
+    set_args
     setup_rhel7_repo
-    upgrade_nss
     install_yum_deps
     install_ruby
     set_gemsources "$@"
     configure_global_gemrc
     install_gem_deps
-    inject_ssh_key
-    inject_repo_token
     clone_git_repo
     symlink_puppet_dir
-    inject_eyaml_keys
     fetch_puppet_modules
     run_puppet
-    secure_puppet_folder
 }
-
-usagemessage="Error, USAGE: $(basename "${0}") \n \
-  --role|-r \n \
-  --environment|-e \n \
-  --repouser|-u \n \
-  --reponame|-n \n \
-  --repoprivkeyfile|-k \n \
-  [--repotoken|-t] \n \
-  [--repobranch|-b] \n \
-  [--repodir|-d] \n \
-  [--eyamlpubkeyfile|-j] \n \
-  [--eyamlprivkeyfile|-m] \n \
-  [--gemsources|-s] \n \
-  [--securepuppet|-z] \n \
-  [--help|-h] \n \
-  [--debug] \n \
-  [--puppet-opts] \n \
-  [--version|-v]"
 
 function log_error() {
     echo "###############------Fatal error!------###############"
@@ -45,119 +21,19 @@ function log_error() {
     printf "%s\n" "${1}"
     exit 1
 }
+#trustrap_args="--role $init_role --environment $init_env --repouser $init_repouser --reponame $init_reponame --repobranch $init_repobranch --repoprivkeyfile '/root/.ssh/id_rsa'"
 
 # Parse the commmand line arguments
-parse_args() {
-  while [[ -n "${1}" ]] ; do
-    case "${1}" in
-      --help|-h)
-        echo -e ${usagemessage}
-        exit
-        ;;
-      --version|-v)
-        print_version "${PROGNAME}" "${VERSION}"
-        exit
-        ;;
-      --role|-r)
-        set_facter init_role "${2}"
-        shift
-        ;;
-      --environment|-e)
-        set_facter init_env "${2}"
-        shift
-        ;;
-      --repouser|-u)
-        set_facter init_repouser "${2}"
-        shift
-        ;;
-      --reponame|-n)
-        set_facter init_reponame "${2}"
-        shift
-        ;;
-      --repoprivkeyfile|-k)
-        set_facter init_repoprivkeyfile "${2}"
-        shift
-        ;;
-      --repotoken|-t)
-        set_facter init_repotoken "${2}"
-        shift
-        ;;
-      --repobranch|-b)
-        set_facter init_repobranch "${2}"
-        shift
-        ;;
-      --repodir|-d)
-        set_facter init_repodir "${2}"
-        shift
-        ;;
-      --eyamlpubkeyfile|-j)
-        set_facter init_eyamlpubkeyfile "${2}"
-        shift
-        ;;
-      --eyamlprivkeyfile|-m)
-        set_facter init_eyamlprivkeyfile "${2}"
-        shift
-        ;;
-      --moduleshttpcache|-c)
-        set_facter init_moduleshttpcache "${2}"
-        shift
-        ;;
-      --passwd|-p)
-        PASSWD="${2}"
-        shift
-        ;;
-      --gemsources)
-        shift
-        ;;
-      --securepuppet|-z)
-        SECURE_PUPPET="${2}"
-        shift
-        ;;
-      --puppet-opts)
-        PUPPET_APPLY_OPTS="${2}"
-        shift
-        ;;
-      --debug)
-        shift
-        ;;
-      *)
-        echo "Unknown argument: ${1}"
-        echo -e "${usagemessage}"
-        exit 1
-        ;;
-    esac
-    shift
-  done
-
-  # Define required parameters.
-  if [[ -z "${FACTER_init_role}" || \
-        -z "${FACTER_init_env}"  || \
-        -z "${FACTER_init_repouser}" || \
-        -z "${FACTER_init_reponame}" || \
-        -z "${FACTER_init_repoprivkeyfile}" ]]; then
-    echo -e "${usagemessage}"
-    exit 1
-  fi
-
-  # Set some defaults if they aren't given on the command line.
-  [[ -z "${FACTER_init_repobranch}" ]] && set_facter init_repobranch master
-  [[ -z "${FACTER_init_repodir}" ]] && set_facter init_repodir /opt/"${FACTER_init_reponame}"
+set_args() {
+  hostnamectl set-hostname devvm.moneysupermarket.com
+  set_facter init_role publisher
+  set_facter init_env ci1-cms
+  set_facter init_repouser MSMFG
+  set_facter init_reponame msm-provisioning
+  set_facter init_repobranch master
+  set_facter init_repodir "/opt/msm-provisioning"
 }
 
-# For the role skydns, prepend the nameserver to the list returned by DHCP
-prepend_nameserver_for_skydns() {
-  if [[ $FACTER_init_role == "skydns" ]]; then
-    echo "Prepending dhclient domain-name-server..."
-    MAC_ADDR=$(cat /sys/class/net/eth0/address)
-    VPC_CIDR=$(curl --silent 169.254.169.254/latest/meta-data/network/interfaces/macs/${MAC_ADDR}/vpc-ipv4-cidr-block)
-    VPC_IP=$(echo $VPC_CIDR | cut -d'/' -f1)
-    AWS_DNS_IP=$(echo $VPC_IP | sed -e "s/\([0-9]\+\)\.\([0-9]\+\)\.\([0-9]\+\)\..\+/\1.\2.\3.2/gi")
-    DHCLIENT_OPTION="prepend domain-name-servers $AWS_DNS_IP;"
-    echo "    $DHCLIENT_OPTION"
-    grep "$DHCLIENT_OPTION" /etc/dhcp/dhclient.conf 1>/dev/null || echo $DHCLIENT_OPTION >> /etc/dhcp/dhclient.conf
-    dhclient -r && dhclient || echo "Could not renew DHCP lease. Continuing..."
-  fi
-}
 
 # Install yum packages if they're not already installed
 yum_install() {
@@ -233,15 +109,6 @@ setup_rhel7_repo() {
     yum-config-manager --enable rhui-REGION-rhel-server-optional || log_error "Failed to run yum-config-manager"
   fi
 
-}
-
-upgrade_nss() {
-  yum_install redhat-lsb-core
-  majorversion=$(lsb_release -rs | cut -f1 -d.)
-  if [[ "$majorversion" == "6" ]]; then
-    echo "Version 6 - Upgrading NSS package TLS1.2 cloning from GitHub.com"
-    yum upgrade -y nss 2>&1 || log_error "Failed to upgrade nss package"
-  fi
 }
 
 install_ruby() {
@@ -324,30 +191,6 @@ install_gem_deps() {
   chmod 0755 /etc/profile.d/ipaddress_primary.sh
 }
 
-# Inject the SSH key to allow git cloning
-inject_ssh_key() {
-  # Set Git login params
-  echo "Injecting private ssh key"
-  GITHUB_PRI_KEY=$(cat "${FACTER_init_repoprivkeyfile}")
-  if [[ ! -d /root/.ssh ]]; then
-    mkdir /root/.ssh || log_error "Failed to create /root/.ssh"
-    chmod 600 /root/.ssh || log_error "Failed to change permissions on /root/.ssh"
-  fi
-  echo "${GITHUB_PRI_KEY}" > /root/.ssh/id_rsa || log_error "Failed to set ssh private key"
-  echo "StrictHostKeyChecking=no" > /root/.ssh/config ||log_error "Failed to set ssh config"
-  chmod -R 600 /root/.ssh || log_error "Failed to set permissions on /root/.ssh"
-}
-
-# Inject the Git token to allow git cloning
-inject_repo_token() {
-  echo "Injecting github access token"
-  if [[ ! -z ${FACTER_init_repotoken} ]]; then
-    echo "${FACTER_init_repotoken}" >> /root/.git-credentials || log_error "Failed to add access token"
-    chmod 600 /root/.git-credentials || log_error "Failed to set permissions on /root/.git-credentials"
-    git config --global credential.helper store || log_error "Failed to set git config"
-  fi
-}
-
 # Clone the git repo
 clone_git_repo() {
   # Clone private repo.
@@ -387,48 +230,6 @@ symlink_puppet_dir() {
   RESULT=$(ln -s /etc/puppet/hiera.yaml /etc/hiera.yaml)
   if [[ $? != 0 ]]; then
     log_error "Failed to create symlink from /etc/hiera.yaml\nln returned:\n${RESULT}"
-  fi
-}
-
-# Inject the eyaml keys
-inject_eyaml_keys() {
-
-  # create secure group
-  GRP='secure'
-  getent group $GRP
-  ret=$?
-  case $ret in
-    0) echo "group $GRP exists" ;;
-    2) ( groupadd $GRP && echo "added group $GRP" ) || log_error "Failed to create group $GRP" ;;
-    *) log_error "Exit code $ret : Failed to verify group $GRP" ;;
-  esac
-
-  if [[ ! -d /etc/puppet/secure/keys ]]; then
-    mkdir -p /etc/puppet/secure/keys || log_error "Failed to create /etc/puppet/secure/keys"
-    chmod -R 550 /etc/puppet/secure || log_error "Failed to change permissions on /etc/puppet/secure"
-  fi
-  # If no eyaml keys have been provided, create some
-  if [[ -z "${FACTER_init_eyamlpubkeyfile}" ]] && [[ -z "${FACTER_init_eyamlprivkeyfile}" ]]; then
-    cd /etc/puppet/secure || log_error "Failed to cd to /etc/puppet/secure"
-    echo -n "Creating eyaml key pair"
-    eyaml createkeys || log_error "Failed to create eyaml keys."
-  else
-  # Or use the ones provided
-    echo "Injecting eyaml keys"
-    local RESULT=''
-
-    RESULT=$(cp ${FACTER_init_eyamlpubkeyfile} /etc/puppet/secure/keys/public_key.pkcs7.pem)
-    if [[ $? != 0 ]]; then
-      log_error "Failed to insert public key:\n${RESULT}"
-    fi
-
-    RESULT=$(cp ${FACTER_init_eyamlprivkeyfile} /etc/puppet/secure/keys/private_key.pkcs7.pem)
-    if [[ $? != 0 ]]; then
-      log_error "Failed to insert private key:\n${RESULT}"
-    fi
-
-    chgrp -R $GRP /etc/puppet/secure || log_error "Failed to change group on /etc/puppet/secure"
-    chmod 440 /etc/puppet/secure/keys/*.pem || log_error "Failed to set permissions on /etc/puppet/secure/keys/*.pem"
   fi
 }
 
@@ -524,8 +325,8 @@ run_puppet() {
   export LC_ALL=en_GB.utf8
   echo ""
   echo "Running puppet apply"
-  export FACTERLIB="${FACTERLIB}:$(ipaddress_primary_path)"
-  puppet apply ${PUPPET_APPLY_OPTS} /etc/puppet/manifests/site.pp --detailed-exitcodes
+  mkdir -p /mnt/ephemeral/
+  puppet apply -e "include ::aemdispatcher::dispatcher" -vd
 
   PUPPET_EXIT=$?
 
@@ -550,27 +351,9 @@ run_puppet() {
       ;;
   esac
 
-  #Find the newest puppet log
-  local PUPPET_LOG=''
-  PUPPET_LOG=$(find /var/lib/puppet/reports -type f -exec ls -ltr {} + | tail -n 1 | awk '{print $9}')
-  PERFORMANCE_DATA=( $(grep evaluation_time "${PUPPET_LOG}" | awk '{print $2}' | sort -n | tail -10 ) )
-  echo "===============-Top 10 slowest Puppet resources-==============="
-  for i in ${PERFORMANCE_DATA[*]}; do
-    echo -n "${i}s - "
-    echo "$(grep -B 3 "evaluation_time: $i" /var/lib/puppet/reports/*/*.yaml | head -1 | awk '{$1="";print}' )"
-  done | tac
-  echo "===============-Top 10 slowest Puppet resources-==============="
 }
 
-secure_puppet_folder()  {
-  local RESULT=''
-  if [[ ! -z "${SECURE_PUPPET}" && "${SECURE_PUPPET}" == "true" && -d ${FACTER_init_repodir}/puppet ]]; then
-    echo "secure_puppet_folder : chmod -R 700 ${FACTER_init_repodir}/puppet directory"
-    RESULT=$(chmod -R 700 ${FACTER_init_repodir}/puppet)
-    if [[ $? != 0 ]]; then
-      log_error "Failed to set permissions on ${FACTER_init_repodir}/puppet:\n${RESULT}"
-    fi
-  fi
-}
+
 
 main "$@"
+
